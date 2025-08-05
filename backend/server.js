@@ -1,34 +1,52 @@
-// server.js
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 
 const app = express();
-const PORT = 5000;
 
-// Middleware
+// ✅ Import registration route
+const registerRoute = require('./routes/register');
+const User = require('./models/User'); // model needed for login
+
+// ✅ Middleware
 app.use(cors());
 app.use(express.json());
 
-// MongoDB connection
-mongoose.connect('mongodb://127.0.0.1:27017/lpg_db', {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => console.log("✅ Connected to MongoDB"))
-  .catch(err => console.error("❌ MongoDB connection error:", err));
+// ✅ MongoDB Connection
+mongoose.connect('mongodb+srv://jaseem:ObjoFA175TulCAn5@cluster0.jajw7cw.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection failed:', err);
+  });
 
-// Import and use route
-app.use('/api/register', require('./routes/register')); // ✅ Correct path
+// ✅ Use the register route
+app.use('/api/register', registerRoute); // ✅ This is correct!
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server running at http://localhost:${PORT}`);
-});
-app.get('/api/ping', async (req, res) => {
+// ✅ Login route
+app.post('/api/login', async (req, res) => {
+  const { email, password } = req.body;
+
   try {
-    // Try to list all collections — simple query to test connection
-    const collections = await mongoose.connection.db.listCollections().toArray();
-    res.json({ message: 'MongoDB is connected!', collections });
+    const existingUser = await User.findOne({ email });
+
+    if (!existingUser) {
+      return res.status(401).json({ message: "User not found" });
+    }
+
+    if (existingUser.password !== password) {
+      return res.status(401).json({ message: "Incorrect password" });
+    }
+
+    res.status(200).json({ message: "Login successful" });
+
   } catch (error) {
-    res.status(500).json({ error: 'MongoDB not connected' });
+    res.status(500).json({ message: "Server error", error });
   }
+});
+
+// ✅ Start the server
+app.listen(5000, () => {
+  console.log("🚀 Server running at http://localhost:5000");
 });
