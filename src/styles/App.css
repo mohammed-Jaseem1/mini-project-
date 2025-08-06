@@ -1,24 +1,29 @@
+/* General Reset and Typography */
 body {
   margin: 0;
   font-family: Arial, sans-serif;
+  background-color: #f9fafb;
 }
 
 .container {
   text-align: center;
 }
 
+/* Navbar */
 .navbar {
   display: flex;
   justify-content: space-between;
+  align-items: center;
   padding: 20px;
   background-color: #f3f3f3;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
 }
 
 .navbar h1 {
   color: #1e40af;
 }
 
+/* Reusable CTA Button */
 .get-started {
   background-color: #2563eb;
   color: white;
@@ -26,8 +31,15 @@ body {
   border: none;
   border-radius: 6px;
   cursor: pointer;
+  font-size: 16px;
+  transition: background-color 0.3s ease;
 }
 
+.get-started:hover {
+  background-color: #1d4ed8;
+}
+
+/* Hero Section */
 .hero {
   padding: 60px 20px;
   background-color: #f9fafb;
@@ -40,20 +52,20 @@ body {
 
 .hero p {
   max-width: 600px;
-  margin: auto;
-  margin-bottom: 20px;
+  margin: 0 auto 20px;
   color: #555;
 }
+
 .hero-image {
-  width: 400px;        /* fixed width */
-  height: auto;        /* keeps image proportional */
+  width: 400px;
+  height: auto;
   display: block;
   margin: 20px auto;
   border-radius: 10px;
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
-
+/* Features Section */
 .features {
   padding: 40px 20px;
 }
@@ -71,9 +83,10 @@ body {
   padding: 20px;
   border-radius: 8px;
   width: 250px;
-  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
 }
 
+/* Footer */
 .footer {
   background-color: #f3f4f6;
   padding: 20px;
