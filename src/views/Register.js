@@ -1,0 +1,122 @@
+import React, { useState } from 'react';
+import axios from 'axios';
+import '../styles/Register.css';
+
+const Register = () => {
+  const [formData, setFormData] = useState({
+    fullName: '',
+    phone: '',
+    email: '',
+    password: '',
+    confirmPassword: ''
+  });
+
+  const [message, setMessage] = useState('');
+
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value
+    }));
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setMessage('');
+
+    if (formData.password !== formData.confirmPassword) {
+      setMessage("❌ Passwords do not match.");
+      return;
+    }
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/register", {
+        fullName: formData.fullName,
+        phone: formData.phone,
+        email: formData.email,
+        password: formData.password
+      });
+
+      console.log("✅ Registration success:", res.data);
+      setMessage("✅ Registration successful!");
+      setFormData({
+        fullName: '',
+        phone: '',
+        email: '',
+        password: '',
+        confirmPassword: ''
+      });
+    } catch (err) {
+      console.error("❌ Registration failed:", err);
+      if (err.response?.data?.message) {
+        setMessage(`❌ ${err.response.data.message}`);
+      } else {
+        setMessage("❌ Network error. Make sure the backend is running.");
+      }
+    }
+  };
+
+  return (
+    <div className="register-container">
+      <div className="form-box">
+        <h2>Register</h2>
+        <form onSubmit={handleSubmit}>
+          <label htmlFor="fullName">Full Name</label>
+          <input
+            type="text"
+            name="fullName"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+          />
+
+          <label htmlFor="phone">Phone</label>
+          <input
+            type="tel"
+            name="phone"
+            value={formData.phone}
+            onChange={handleChange}
+            required
+          />
+
+          <label htmlFor="email">Email</label>
+          <input
+            type="email"
+            name="email"
+            value={formData.email}
+            onChange={handleChange}
+            required
+          />
+
+          <label htmlFor="password">Password</label>
+          <input
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            required
+          />
+
+          <label htmlFor="confirmPassword">Confirm Password</label>
+          <input
+            type="password"
+            name="confirmPassword"
+            value={formData.confirmPassword}
+            onChange={handleChange}
+            required
+          />
+
+          <button type="submit">Register</button>
+        </form>
+
+        {message && <p className="message">{message}</p>}
+
+        <div className="signin-text">
+          Already have an account? <a href="/login">Sign in</a>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default Register;

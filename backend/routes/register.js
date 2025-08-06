@@ -9,11 +9,13 @@ router.post('/', async (req, res) => {
   const { fullName, phone, email, password } = req.body;
 
   try {
+    // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists' });
     }
 
+    // Save new user
     const newUser = new User({ fullName, phone, email, password });
     await newUser.save();
 
@@ -25,4 +27,4 @@ router.post('/', async (req, res) => {
   }
 });
 
-module.exports = router; // ✅ Make sure this is at the bottom
+module.exports = router;
