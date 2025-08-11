@@ -1,0 +1,120 @@
+/* Reset some defaults */
+body, html, div, h1, h2, h3, h4, p, button {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Segoe UI', sans-serif;
+}
+
+/* Main container */
+.container {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+/* Navbar */
+.navbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1.5rem 2rem;
+  background-color: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+
+.navbar h1 {
+  font-size: 1.8rem;
+  color: #333;
+}
+
+/* Hero section with full background image */
+.hero {
+  background-image: url('/public/home.png'); /* ✅ correct way to refer from public folder */
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  position: relative;
+}
+
+.hero-overlay {
+  background-color: rgba(255, 255, 255, 0.85); /* slightly more opaque for readability */
+  padding: 40px 30px;
+  border-radius: 12px;
+  max-width: 600px;
+}
+
+.hero h2 {
+  font-size: 2.5rem;
+  margin-bottom: 1rem;
+  color: #1e40af;
+}
+
+.hero p {
+  font-size: 1.1rem;
+  color: #333;
+}
+
+/* Get Started button */
+.get-started {
+  background-color: #ff7e00;
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  margin-top: 1.5rem;
+  font-size: 1rem;
+  transition: background-color 0.3s ease;
+}
+
+.get-started:hover {
+  background-color: #ff6600;
+}
+
+/* Features section */
+.features {
+  padding: 60px 20px;
+  background-color: #f9fafb;
+  text-align: center;
+}
+
+.feature-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 30px;
+}
+
+.feature-card {
+  background-color: #ffffff;
+  padding: 25px;
+  width: 280px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.feature-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+}
+
+.feature-card h4 {
+  margin-bottom: 10px;
+  color: #1e40af;
+}
+
+.feature-card p {
+  color: #555;
+}
