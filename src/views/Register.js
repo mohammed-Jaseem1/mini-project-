@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import '../styles/Register.css';
+import { Link, useNavigate } from 'react-router-dom';
 
 const Register = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
@@ -10,11 +12,10 @@ const Register = () => {
     password: '',
     confirmPassword: ''
   });
-
   const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
-    setFormData((prev) => ({
+    setFormData(prev => ({
       ...prev,
       [e.target.name]: e.target.value
     }));
@@ -30,24 +31,19 @@ const Register = () => {
     }
 
     try {
-      const res = await axios.post("http://localhost:5000/api/register", {
+      await axios.post("http://localhost:5000/api/register", {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email,
         password: formData.password
       });
 
-      console.log("✅ Registration success:", res.data);
-      setMessage("✅ Registration successful!");
-      setFormData({
-        fullName: '',
-        phone: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-      });
+      setMessage("✅ Registration successful! Redirecting...");
+      // Optional delay for user to see success message
+      setTimeout(() => {
+        navigate('/login', { replace: true });
+      }, 1000);
     } catch (err) {
-      console.error("❌ Registration failed:", err);
       if (err.response?.data?.message) {
         setMessage(`❌ ${err.response.data.message}`);
       } else {
@@ -61,50 +57,20 @@ const Register = () => {
       <div className="form-box">
         <h2>Register</h2>
         <form onSubmit={handleSubmit}>
-          <label htmlFor="fullName">Full Name</label>
-          <input
-            type="text"
-            name="fullName"
-            value={formData.fullName}
-            onChange={handleChange}
-            required
-          />
+          <label>Full Name</label>
+          <input type="text" name="fullName" value={formData.fullName} onChange={handleChange} required />
 
-          <label htmlFor="phone">Phone</label>
-          <input
-            type="tel"
-            name="phone"
-            value={formData.phone}
-            onChange={handleChange}
-            required
-          />
+          <label>Phone</label>
+          <input type="tel" name="phone" value={formData.phone} onChange={handleChange} required />
 
-          <label htmlFor="email">Email</label>
-          <input
-            type="email"
-            name="email"
-            value={formData.email}
-            onChange={handleChange}
-            required
-          />
+          <label>Email</label>
+          <input type="email" name="email" value={formData.email} onChange={handleChange} required />
 
-          <label htmlFor="password">Password</label>
-          <input
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            required
-          />
+          <label>Password</label>
+          <input type="password" name="password" value={formData.password} onChange={handleChange} required />
 
-          <label htmlFor="confirmPassword">Confirm Password</label>
-          <input
-            type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
-            onChange={handleChange}
-            required
-          />
+          <label>Confirm Password</label>
+          <input type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required />
 
           <button type="submit">Register</button>
         </form>
@@ -112,7 +78,7 @@ const Register = () => {
         {message && <p className="message">{message}</p>}
 
         <div className="signin-text">
-          Already have an account? <a href="/login">Sign in</a>
+          Already have an account? <Link to="/login">Sign in</Link>
         </div>
       </div>
     </div>
