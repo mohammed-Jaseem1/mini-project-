@@ -1,57 +1,41 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const User = require('../models/User');
-const Admin = require('../models/Admin');
+const User = require('../models/User'); // Both admins and users are stored here
 
 router.post('/', async (req, res) => {
   try {
     const { email, password } = req.body;
-    console.log('Login attempt for:', email);  // Debug log
-    
-    // Check admin first
-    const admin = await Admin.findOne({ email });
-    if (admin) {
-      const validPassword = await bcrypt.compare(password, admin.password);
-      if (validPassword) {
-        return res.json({
-          success: true,
-          message: "Login successful",
-          role: 'admin',
-          email: admin.email
-        });
-      }
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password required' });
     }
 
-    // Check regular user
-    const user = await User.findOne({ email });
+    // Find user in DB (could be admin or normal user)
+    const user = await User.findOne({ email: email.trim().toLowerCase() });
+
     if (!user) {
-      return res.status(401).json({ 
-        success: false,
-        message: "Invalid credentials" 
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
+    // Validate password
     const validPassword = await bcrypt.compare(password, user.password);
     if (!validPassword) {
-      return res.status(401).json({ 
-        success: false,
-        message: "Invalid credentials" 
-      });
+      return res.status(401).json({ success: false, message: "Invalid credentials" });
     }
 
+    // ✅ Return role from DB instead of hardcoding
     return res.json({
       success: true,
       message: "Login successful",
-      role: 'user',
+      role: user.role, // should be 'admin' or 'user' in DB
       email: user.email
     });
 
   } catch (error) {
     console.error('Login error:', error);
-    return res.status(500).json({ message: "Server error occurred" });
+    return res.status(500).json({ success: false, message: "Server error occurred" });
   }
 });
 
 module.exports = router;
-

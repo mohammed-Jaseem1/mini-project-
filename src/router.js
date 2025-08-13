@@ -2,12 +2,11 @@ import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 import Home from './views/home';
 import Register from './views/Register';
-import Login from './views/login';
+import Login from './views/login'; // Fixed case to match actual filename
 import AdminDashboard from './views/adminDashboard';
-import UserDashboard from './views/userDashboard';
 import NewConnection from './views/Newconnection';
+import UserDashboard from './views/userDashboard';
 
-// Define the main application routes
 
 function AppRoutes() {
   return (
@@ -16,8 +15,11 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/login" element={<Login />} />
       <Route path="/admin-dashboard" element={<AdminDashboard />} />
-      <Route path="/dashboard" element={<UserDashboard />} />
       <Route path="/new-connection" element={<NewConnection />} />
+       <Route path="/user-Dashboard" element={<UserDashboard />} />
+      
+      
+     
     </Routes>
   );
 }

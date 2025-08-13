@@ -1,17 +1,19 @@
 import React, { useState } from 'react';
 import axios from 'axios';
-import '../styles/Register.css';
+import '../styles/Register.css'; // adjust if needed
 import { Link, useNavigate } from 'react-router-dom';
 
-const Register = () => {
+export default function Register() {
   const navigate = useNavigate();
+
   const [formData, setFormData] = useState({
     fullName: '',
     phone: '',
     email: '',
     password: '',
-    confirmPassword: ''
+    confirmPassword: '',
   });
+
   const [message, setMessage] = useState('');
 
   const handleChange = (e) => {
@@ -23,23 +25,35 @@ const Register = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setMessage('');
 
+    // Email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(formData.email)) {
+      setMessage('❌ Please enter a valid email address.');
+      return;
+    }
+
+    // Password length check
+    if (formData.password.length < 6) {
+      setMessage('❌ Password must be at least 6 characters long.');
+      return;
+    }
+
+    // Password match check
     if (formData.password !== formData.confirmPassword) {
-      setMessage("❌ Passwords do not match.");
+      setMessage('❌ Passwords do not match!');
       return;
     }
 
     try {
-      await axios.post("http://localhost:5000/api/register", {
+      await axios.post('http://localhost:5000/api/register', {
         fullName: formData.fullName,
         phone: formData.phone,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
 
-      setMessage("✅ Registration successful! Redirecting...");
-      // Optional delay for user to see success message
+      setMessage('✅ Registration successful! Redirecting...');
       setTimeout(() => {
         navigate('/login', { replace: true });
       }, 1000);
@@ -47,7 +61,7 @@ const Register = () => {
       if (err.response?.data?.message) {
         setMessage(`❌ ${err.response.data.message}`);
       } else {
-        setMessage("❌ Network error. Make sure the backend is running.");
+        setMessage('❌ Network error. Make sure the backend is running.');
       }
     }
   };
@@ -83,6 +97,4 @@ const Register = () => {
       </div>
     </div>
   );
-};
-
-export default Register;
+}

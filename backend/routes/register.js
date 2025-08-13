@@ -1,14 +1,17 @@
-// routes/register.js
 const express = require('express');
-const bcrypt = require('bcrypt'); // 👈 import bcrypt
 const router = express.Router();
-const User = require('../models/User');
 
-router.post('/', async (req, res) => {
-  console.log("📥 Registration data received:", req.body);
+const UserSchema = new mongoose.Schema({
+  fullName: String,
+  phone: String,
+  email: String,
+  password: String,
+});
 
+const User = mongoose.models.User || mongoose.model("User", UserSchema);
+
+router.post("/", async (req, res) => {
   const { fullName, phone, email, password } = req.body;
-
   try {
     // Check for existing user
     const existingUser = await User.findOne({ email });
@@ -16,29 +19,14 @@ router.post('/', async (req, res) => {
       return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Hash password before saving 👇
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
-
     // Save new user
-    const newUser = new User({ 
-      fullName, 
-      phone, 
-      email, 
-      password: hashedPassword, // store hashed password
-      role: 'user' // Explicitly set role
-    });
+    const newUser = new User({ fullName, phone, email, password });
     await newUser.save();
 
     console.log("✅ User saved to MongoDB");
-    res.status(201).json({ 
-      success: true,
-      message: 'User registered successfully!',
-      role: newUser.role 
-    });
+    res.status(201).json({ message: 'User registered successfully!' });
   } catch (err) {
-    console.error("❌ Error saving user:", err);
-    res.status(500).json({ error: 'Something went wrong' });
+    res.status(500).json({ message: "Error saving user" });
   }
 });
 
