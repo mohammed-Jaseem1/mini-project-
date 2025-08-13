@@ -92,7 +92,7 @@ export default function Register() {
         {message && <p className="message">{message}</p>}
 
         <div className="signin-text">
-          Already have an account? <Link to="/login">Sign in</Link>
+          Already have a account? <Link to="/login">Sign in</Link>
         </div>
       </div>
     </div>
