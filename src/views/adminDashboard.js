@@ -13,7 +13,7 @@ function AdminDashboard() {
   };
 
   return (
-    <div className="admin-dashboard-container">
+    <div className="admin-dashboard">
       <header className="admin-header">
         <h1>Admin Dashboard</h1>
         <button onClick={handleLogout} className="logout-btn">Logout</button>
@@ -32,6 +32,11 @@ function AdminDashboard() {
           <button className="action-btn">Manage Data</button>
           <button className="action-btn">Generate Reports</button>
         </section>
+
+        <div className="admin-content">
+          <div>Welcome Administrator</div>
+          {/* Add your admin dashboard content here */}
+        </div>
       </main>
     </div>
   );

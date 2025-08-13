@@ -1,52 +1,52 @@
 .login-container {
   display: flex;
   justify-content: center;
-  padding: 50px;
+  align-items: center;
+  height: 100vh;
+  background-color: #f5f5f5;
 }
 
-.form-box {
-  border: 1px solid #ccc;
-  padding: 20px;
-  width: 300px;
+.login-box {
+  background: white;
+  padding: 2rem;
   border-radius: 8px;
-  background-color: white;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 400px;
 }
 
-.form-box h2 {
-  text-align: center;
-  margin-bottom: 20px;
-  color: #1e293b;
+.form-group {
+  margin-bottom: 1rem;
 }
 
-form {
-  display: flex;
-  flex-direction: column;
-}
-
-label {
-  margin-bottom: 5px;
-  color: #334155;
-  font-weight: bold;
-}
-
-input {
-  padding: 10px;
-  margin-bottom: 20px;
-  border: 1px solid #cbd5e1;
-  border-radius: 6px;
-  font-size: 14px;
+.form-group input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 1rem;
 }
 
 button {
-  background-color: #4f46e5;
+  width: 100%;
+  padding: 0.75rem;
+  background-color: #007bff;
   color: white;
-  padding: 12px;
   border: none;
-  border-radius: 9999px;
-  font-size: 16px;
+  border-radius: 4px;
   cursor: pointer;
-  transition: background-color 0.3s ease;
 }
+
+button:disabled {
+  background-color: #ccc;
+}
+
+.error-message {
+  color: red;
+  margin-top: 1rem;
+  text-align: center;
+}
+
 
 button:hover {
   background-color: #4338ca;

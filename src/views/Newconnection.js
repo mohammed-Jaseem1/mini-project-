@@ -124,7 +124,7 @@ function KYCForm() {
         </legend>
 
         <p>
-          Proof of Address (POA) <a href="#" style={{ color: '#1a73e8', textDecoration: 'none' }}>click here to know list of accepted documents</a>
+          Proof of Address (POA) <a href="/some-valid-path" style={{ color: '#1a73e8', textDecoration: 'none' }}>click here to know list of accepted documents</a>
         </p>
 
         <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
@@ -234,7 +234,7 @@ function KYCForm() {
       </fieldset>
 
       <p style={{ textAlign: 'center', marginTop: '20px', color: '#1a73e8', cursor: 'pointer' }}>
-        Already have a connection? <a href="#">Click here</a>
+        Already have a connection? <a href="/some-valid-path">Click here</a>
       </p>
 
       <div style={{ textAlign: 'center', marginTop: '20px' }}>
