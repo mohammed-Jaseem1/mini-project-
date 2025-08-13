@@ -1,3 +1,4 @@
+// File: src/views/Login.js
 import React, { useState } from 'react';
 import "./login.css";
 import { useNavigate } from 'react-router-dom';
@@ -8,37 +9,23 @@ function Login() {
   const [password, setPassword] = useState('');
   const navigate = useNavigate();
 
-  // Define default admin credentials
-  const defaultAdmin = {
-    email: 'ad@gmail.com',
-    password: '123'
-  };
-
   const handleLogin = (e) => {
     e.preventDefault();
 
-    // Check for hardcoded admin login
-    if (email === defaultAdmin.email && password === defaultAdmin.password) {
-      localStorage.setItem('role', 'admin');
-      alert('Welcome Admin!');
-      navigate('/admindash');
-      return; // skip API call
-    }
-
-    // Proceed to authenticate regular users via backend
     axios.post('http://localhost:5000/api/login', { email, password })
       .then(res => {
         alert(res.data.message);
 
-        const role = res.data.role || 'user'; // fallback to 'user'
+        const role = res.data.role || 'user';
 
         if (res.data.token) {
           localStorage.setItem('token', res.data.token);
         }
         localStorage.setItem('role', role);
 
+        // ✅ Fixed navigation paths
         if (role === 'admin') {
-          navigate('/admindash');
+          navigate('/admin');
         } else if (role === 'user') {
           navigate('/userdash');
         } else {

@@ -1,63 +1,45 @@
-import React from 'react';
-import './admindash.css';
+import React from "react";
+import { useNavigate } from "react-router-dom";
 
-const GasMonitorDashboard = () => {
+
+function AdminDashboard() {
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    // Clear auth info here if using tokens/localStorage (optional)
+    // localStorage.removeItem('token'); // example if using token
+
+    navigate("/"); // Redirect to login page on logout
+  };
+
   return (
-    <div className="dashboard-container">
-      <header className="dashboard-header">
-        <h1>Gas Monitor</h1>
-        <nav>
-          <ul>
-            <li><a href="/userdash">Dashboard</a></li>
-            <li><a href="/history">History</a></li>
-            <li><a href="/payment">Payment</a></li>
-            <li><a href="/feedback">Feedback</a></li>
-          </ul>
-        </nav>
-        <div className="profile-picture">
-          <img src="profile-picture.jpg" alt="Profile" />
-        </div>
+    <div className="admin-dashboard">
+      <header className="admin-header">
+        <h1>Admin Dashboard</h1>
+        <button onClick={handleLogout} className="logout-btn">Logout</button>
       </header>
-      <main className="dashboard-main">
-        <h2>Dashboard</h2>
-        <div className="stats-container">
-          <div className="stat-box">
-            <h3>Current Gas Level</h3>
-            <p>75%</p>
-          </div>
-          <div className="stat-box">
-            <h3>Estimated Refill Date</h3>
-            <p>2024-08-15</p>
-          </div>
-          <div className="stat-box">
-            <h3>Tube Expiry Date</h3>
-            <p>2025-01-01</p>
-          </div>
-        </div>
-        <div className="alerts-container">
-          <h3>Alerts</h3>
-          <div className="alert-box warning">
-            <i className="warning-icon"></i>
-            <p>Low Gas Level</p>
-            <p>Gas level is below 20%</p>
-          </div>
-        </div>
-        <div className="notifications-container">
-          <h3>Notifications</h3>
-          <div className="notification-box success">
-            <i className="success-icon"></i>
-            <p>Cylinder booked successfully</p>
-            <p>2024-07-20 10:00 AM</p>
-          </div>
-          <div className="notification-box success">
-            <i className="success-icon"></i>
-            <p>Payment received</p>
-            <p>2024-07-15 02:30 PM</p>
-          </div>
+
+      <main className="admin-main">
+        <section className="stats">
+          <h2>Overview</h2>
+          <p>Number of users: 25</p> {/* You can replace with dynamic data later */}
+          <p>Pending tasks: 3</p>    {/* You can replace with dynamic data later */}
+        </section>
+
+        <section className="actions">
+          <h2>Actions</h2>
+          <button className="action-btn">View All Users</button>
+          <button className="action-btn">Manage Data</button>
+          <button className="action-btn">Generate Reports</button>
+        </section>
+
+        <div className="admin-content">
+          <div>Welcome Administrator</div>
+          {/* Add your admin dashboard content here */}
         </div>
       </main>
     </div>
   );
-};
+}
 
-export default GasMonitorDashboard;
+export default AdminDashboard;

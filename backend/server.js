@@ -1,26 +1,34 @@
-require('dotenv').config(); // Load env variables at the top
-
+require('dotenv').config();
 const express = require('express');
-const mongoose = require('mongoose');
 const cors = require('cors');
+const mongoose = require('mongoose');
 
-const registerRoute = require('./routes/register');
 const loginRoute = require('./routes/login');
+const registerRoute = require('./routes/register');
 
 const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Middleware
 app.use(cors());
 app.use(express.json());
 
-// Use your Atlas connection string from env
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-})
-.then(() => console.log('✅ Connected to MongoDB Atlas - IotDB'))
-.catch(err => console.error('❌ MongoDB Atlas Connection Error:', err));
-
-app.use('/api/register', registerRoute);
+// Routes
 app.use('/api/login', loginRoute);
+app.use('/api/register', registerRoute);
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+// Simple health check
+app.get('/', (req, res) => res.send('API running'));
+
+// MongoDB URI from .env
+const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/yourdb';
+
+// Connect to MongoDB
+mongoose.connect(MONGO_URI)
+  .then(() => {
+    console.log('✅ Connected to MongoDB');
+    app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));
+  })
+  .catch(err => {
+    console.error('❌ MongoDB connection error:', err.message);
+  });

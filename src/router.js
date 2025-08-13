@@ -1,21 +1,25 @@
-// router.js
 import React from 'react';
-import { Routes, Route } from 'react-router-dom';
-import Home from './views/home';
-import Register from './views/Register';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import Login from './views/login';
-
+import Register from './views/Register';
+import Home from './views/home';
 import GasMonitorDashboard from './views/userdash';
+import AdminDashboard from './views/AdminDashboard';
+import KYCForm from './views/KYCForm'; // ✅ Import correctly
 
-function AppRoutes() {
+function App() {
   return (
-    <Routes>
-      <Route path="/" element={<Home />} />
-      <Route path="/register" element={<Register />} />
-      <Route path="/login" element={<Login />} />
-  <Route path="/userdash" element={<GasMonitorDashboard />} />
-    </Routes>
+    <Router>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/userdash" element={<GasMonitorDashboard />} />
+        <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/kyc" element={<KYCForm />} /> {/* ✅ Route added */}
+      </Routes>
+    </Router>
   );
 }
 
-export default AppRoutes;
+export default App;
