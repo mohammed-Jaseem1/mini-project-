@@ -1,120 +1,175 @@
-/* Reset some defaults */
-body, html, div, h1, h2, h3, h4, p, button {
+/* Apply dark background to entire page */
+.home-page {
+  min-height: 100vh;
   margin: 0;
   padding: 0;
-  box-sizing: border-box;
-  font-family: 'Segoe UI', sans-serif;
+  background-color: #0f172a;
+  /* Dark navy blue */
+  font-family: Arial, sans-serif;
 }
 
-/* Main container */
+
+
+
+/* Container */
 .container {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
+  max-width: 1200px;
+  margin: auto;
+  padding: 0;
+  text-align: center;
 }
 
 /* Navbar */
 .navbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1.5rem 2rem;
-  background-color: #ffffff;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  padding: 15px;
+  background-color: #1e293b;
+  color: white;
+  border: none;
+  /* remove any border */
 }
 
 .navbar h1 {
-  font-size: 1.8rem;
-  color: #333;
+  font-size: 24px;
+  margin: 0;
 }
 
-/* Hero section with full background image */
+/* Hero Section - Image on top, content below */
 .hero {
-  background-image: url('/public/home.png'); /* ✅ correct way to refer from public folder */
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  height: 100vh;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
   text-align: center;
-  position: relative;
-}
-
-.hero-overlay {
-  background-color: rgba(255, 255, 255, 0.85); /* slightly more opaque for readability */
-  padding: 40px 30px;
-  border-radius: 12px;
-  max-width: 600px;
-}
-
-.hero h2 {
-  font-size: 2.5rem;
-  margin-bottom: 1rem;
-  color: #1e40af;
-}
-
-.hero p {
-  font-size: 1.1rem;
-  color: #333;
-}
-
-/* Get Started button */
-.get-started {
-  background-color: #ff7e00;
-  color: white;
+  padding: 40px;
+  background-color: #0f172a;
+  /* Matches full page background */
   border: none;
-  padding: 0.75rem 1.5rem;
-  border-radius: 6px;
+  /* remove any border */
+}
+
+.hero-image {
+  width: 100%;
+  height: 300px;
+  background-image: url('/public/home.png');
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  margin-bottom: 30px;
+  border: none;
+  /* remove border */
+}
+
+/* Content */
+.hero-content {
+  max-width: 700px;
+}
+
+.hero-content h2 {
+  font-size: 36px;
+  margin-bottom: 15px;
+  color: #60a5fa;
+  /* Light blue */
+  border: none;
+}
+
+.hero-content p {
+  font-size: 16px;
+  color: #d1d5db;
+  /* Light gray text */
+  margin-bottom: 25px;
+  border: none;
+}
+
+/* Get Started Button */
+.get-started {
+  background: linear-gradient(135deg, #a0e9ff, #70cfff);
+  color: #003366;
+  padding: 14px 36px;
+  border: none;
+  /* remove border */
+  border-radius: 50px;
   cursor: pointer;
+  font-size: 18px;
   font-weight: bold;
-  margin-top: 1.5rem;
-  font-size: 1rem;
-  transition: background-color 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 6px 20px rgba(112, 207, 255, 0.4);
+  transition: all 0.3s ease;
+  outline: none;
+  /* remove focus outline */
 }
 
 .get-started:hover {
-  background-color: #ff6600;
+  background: linear-gradient(135deg, #70cfff, #4db8e6);
+  box-shadow: 0 8px 25px rgba(112, 207, 255, 0.6);
+  transform: translateY(-3px) scale(1.05);
 }
 
-/* Features section */
+/* Features Section */
 .features {
-  padding: 60px 20px;
-  background-color: #f9fafb;
+  padding: 50px;
   text-align: center;
+  background-color: #0f172a;
+  /* Match full page background */
+  border: none;
+}
+
+.features h3 {
+  font-size: 28px;
+  margin-bottom: 20px;
+  color: #facc15;
+  /* Yellow */
+  border: none;
 }
 
 .feature-grid {
   display: flex;
-  flex-wrap: wrap;
+  gap: 20px;
   justify-content: center;
-  gap: 30px;
-  margin-top: 30px;
+  flex-wrap: wrap;
 }
 
 .feature-card {
-  background-color: #ffffff;
-  padding: 25px;
-  width: 280px;
-  border-radius: 12px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  background: #1e293b;
+  padding: 20px;
+  border-radius: 10px;
+  width: 300px;
+  color: #d1d5db;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+  border: none;
+  /* remove border */
 }
 
-.feature-card:hover {
-  transform: translateY(-10px);
-  box-shadow: 0 12px 25px rgba(0, 0, 0, 0.12);
+/* Footer */
+.footer {
+  background-color: #1e293b;
+  padding: 15px;
+  text-align: center;
+  font-size: 14px;
+  color: #9ca3af;
+  border: none;
 }
 
-.feature-card h4 {
-  margin-bottom: 10px;
-  color: #1e40af;
+.footer a {
+  color: #93c5fd;
+  text-decoration: none;
 }
 
-.feature-card p {
-  color: #555;
+.footer a:hover {
+  text-decoration: underline;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .hero-image {
+    height: 200px;
+  }
+
+  .hero-content h2 {
+    font-size: 28px;
+  }
+
+  .get-started {
+    font-size: 16px;
+    padding: 12px 28px;
+  }
 }

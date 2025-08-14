@@ -1,37 +1,68 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const User = require('../models/User');
+const express = require("express");
+const bcrypt = require("bcrypt");
+const User = require("../models/User");
+
 const router = express.Router();
 
-router.post('/', async (req, res) => {
+// POST /api/register
+router.post("/", async (req, res) => {
   try {
-    const { fullName, email, phone, password } = req.body;
+    const { fullName, phone, email, password, confirmPassword } = req.body;
 
-    // Check if user already exists
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      return res.status(400).json({ message: 'User already exists' });
+    // 1️⃣ Basic validation
+    if (!fullName || !phone || !email || !password || !confirmPassword) {
+      return res.status(400).json({ message: "All fields are required" });
     }
 
-    // Hash password
-    const salt = await bcrypt.genSalt(10);
-    const hashedPassword = await bcrypt.hash(password, salt);
+    // 2️⃣ Clean phone number (remove +91 and spaces)
+    const cleanedPhone = phone.replace("+91", "").replace(/\s/g, "");
 
-    // Create new user with role defaulting to 'user'
-    const user = new User({
+    // 3️⃣ Phone validation (must start with 6-9 and have 10 digits)
+    const phonePattern = /^[6-9][0-9]{9}$/;
+    if (!phonePattern.test(cleanedPhone)) {
+      return res.status(400).json({ message: "Invalid phone number format" });
+    }
+
+    // 4️⃣ Email validation (must end with @gmail.com)
+    const emailPattern = /^[^\s@]+@gmail\.com$/;
+    if (!emailPattern.test(email)) {
+      return res.status(400).json({ message: "Email must be a valid @gmail.com address" });
+    }
+
+    // 5️⃣ Password match check
+    if (password !== confirmPassword) {
+      return res.status(400).json({ message: "Passwords do not match" });
+    }
+
+    // 6️⃣ Check if email already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: "Email already registered" });
+    }
+
+    // 7️⃣ Check if phone number already exists
+    const existingPhone = await User.findOne({ phone: cleanedPhone });
+    if (existingPhone) {
+      return res.status(400).json({ message: "Phone number already registered" });
+    }
+
+    // 8️⃣ Hash the password
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    // 9️⃣ Create new user
+    const newUser = new User({
       fullName,
+      phone: cleanedPhone, // store only digits in DB
       email,
-      phone,
-      password: hashedPassword,
-      role: 'user' // This is optional since we set the default in schema
+      password: hashedPassword
     });
 
-    await user.save();
+    await newUser.save();
 
-    res.status(201).json({ message: 'User registered successfully' });
+    res.status(201).json({ message: "User registered successfully" });
   } catch (error) {
-    console.error('Registration error:', error);
-    res.status(500).json({ message: 'Server error' });
+    console.error("❌ Registration error:", error);
+    res.status(500).json({ message: "Server error" });
   }
 });
 
