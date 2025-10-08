@@ -1,245 +1,293 @@
 import React, { useState, useEffect } from "react";
 import "../styles/payment.css";
+import { useNavigate } from "react-router-dom"; // Add this import
 
 function generateCustomerId() {
   return "CUST" + Math.floor(100000 + Math.random() * 900000);
 }
 
 export default function GasPayment() {
+  const navigate = useNavigate(); // Add this hook
   const [customerId, setCustomerId] = useState("");
-  const [amountDue] = useState("500"); // Fixed amount
-  const [paymentMethod, setPaymentMethod] = useState("");
-  const [pin, setPin] = useState("");
+  const [amountDue] = useState(500); // Fixed amount
+  const [paymentMethod, setPaymentMethod] = useState("Credit Card");
   const [cardNumber, setCardNumber] = useState("");
-  const [gmail, setGmail] = useState(""); // <-- use 'gmail' field
+  const [expiry, setExpiry] = useState("");
+  const [cvv, setCvv] = useState("");
+  const [address, setAddress] = useState("");
+  const [city, setCity] = useState("");
+  const [state, setState] = useState("");
+  const [zip, setZip] = useState(""); // pincode
+  const [gmail, setGmail] = useState(""); // autofilled
   const [success, setSuccess] = useState(false);
-  const [cardError, setCardError] = useState("");
-  const [pinError, setPinError] = useState("");
-  const [gasLevel, setGasLevel] = useState(null);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    setCustomerId(generateCustomerId());
-    // Autofill gmail from backend (current logged-in user)
-    async function fetchGmail() {
+    // Instead of generating a new ID every time, fetch it from backend or localStorage
+    async function fetchCustomerId() {
+      // Try to get from localStorage first
+      let storedId = localStorage.getItem("customerId");
+      if (storedId) {
+        setCustomerId(storedId);
+        return;
+      }
+      // Otherwise, generate and store it
+      const newId = generateCustomerId();
+      setCustomerId(newId);
+      localStorage.setItem("customerId", newId);
+    }
+    fetchCustomerId();
+
+    // Fetch logged-in user email and KYC details
+    async function fetchGmailAndKYC() {
       try {
-        const res = await fetch('http://localhost:5000/api/user/me', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+        const res = await fetch("http://localhost:5000/api/user/me", {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
         });
         if (res.ok) {
           const data = await res.json();
           setGmail(data.email || "");
-        }
-      } catch (err) {
-        // Optionally handle error
-      }
-    }
-    fetchGmail();
 
-    // Fetch current gas level
-    async function fetchGasLevel() {
-      try {
-        const res = await fetch('http://localhost:5000/api/gas/status', {
-          method: 'GET',
-          credentials: 'include',
-          headers: { 'Content-Type': 'application/json' },
-        });
-        if (res.ok) {
-          const data = await res.json();
-          setGasLevel(data.gasLevel);
+          // Fetch KYC details using email
+          if (data.email) {
+            const kycRes = await fetch(
+              `http://localhost:5000/api/kyc/user/me?email=${encodeURIComponent(
+                data.email
+              )}`,
+              {
+                method: "GET",
+                credentials: "include",
+                headers: { "Content-Type": "application/json" },
+              }
+            );
+            if (kycRes.ok) {
+              const kyc = await kycRes.json();
+              setAddress(kyc.houseName || "");
+              setCity(kyc.city || "");
+              setState(kyc.state || "");
+              setZip(kyc.pinCode || "");
+            }
+          }
         }
       } catch (err) {
-        setGasLevel(null);
+        console.error("Error fetching Gmail/KYC", err);
       }
     }
-    fetchGasLevel();
+    fetchGmailAndKYC();
   }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setCardError("");
-    setPinError("");
-    if ((paymentMethod === "Credit Card" || paymentMethod === "Debit Card")) {
-      // Simple validation: card number must be exactly 16 digits
-      if (!/^\d{16}$/.test(cardNumber)) {
-        setCardError("Please enter a valid 16-digit card number.");
-        return;
-      }
-      // PIN must be exactly 6 digits
-      if (!/^\d{6}$/.test(pin)) {
-        setPinError("Please enter a valid 6-digit PIN.");
-        return;
-      }
-    }
+    setError("");
+    setSuccess(false);
 
-    // Store payment details in backend
     try {
-      await fetch('http://localhost:5000/api/payment', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      const res = await fetch("http://localhost:5000/api/payment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           customerId,
-          amountPaid: Number(amountDue),
+          amountPaid: amountDue,
           paymentMethod,
-          cardNumber: cardNumber ? cardNumber : undefined,
-          gmail // <-- ensure this is 'gmail'
+          cardLast4Digits: cardNumber.slice(-4),
+          expiry,
+          cvv,
+          billingAddress: { address, city, state, pincode: zip }, // <-- change zip to pincode
+          gmail,
         }),
       });
-      setSuccess(true);
-      setTimeout(() => window.location.href = '/userdash', 1500); // Redirect after success
+
+      if (res.ok) {
+        setSuccess(true);
+        setTimeout(() => (window.location.href = "/userdash"), 2000);
+      } else {
+        const data = await res.json();
+        setError(data.message || "Payment failed. Try again.");
+      }
     } catch (err) {
-      // Optionally handle error
+      setError("Server error. Please try later.");
     }
   };
 
+  const handleBack = () => {
+    navigate(-1); // This will go back to the previous page
+  };
+
   return (
-    <div className="payment-box">
-      <div className="payment-card">
-        <h2>Gas Connection Payment</h2>
-        {/* Gas Level Notification */}
-        {gasLevel !== null && gasLevel < 20 && (
-          <div style={{
-            background: '#fff3e0',
-            color: '#d32f2f',
-            border: '2px solid #d32f2f',
-            borderRadius: '10px',
-            padding: '1em',
-            fontWeight: 600,
-            marginBottom: '1em',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-          }}>
-            ⚠️ Gas level is below 20%. Please refill your gas cylinder soon!
-          </div>
-        )}
+    <div className="payment-page">
+      <div className="payment-container">
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            marginBottom: "20px",
+          }}
+        >
+          <button
+            onClick={handleBack}
+            style={{
+              padding: "8px 15px",
+              backgroundColor: "#666",
+              color: "white",
+              border: "none",
+              borderRadius: "4px",
+              cursor: "pointer",
+              marginRight: "20px",
+            }}
+          >
+            ← Back
+          </button>
+          <h2>Secure Payment</h2>
+        </div>
+        <p>Please enter your payment details below.</p>
+
+        {/* Payment Method Tabs */}
+        <div className="method-tabs">
+          {["Credit Card", "Debit Card", "Net Banking"].map((method) => (
+            <button
+              key={method}
+              type="button"
+              className={`tab-btn ${
+                paymentMethod === method ? "active" : ""
+              }`}
+              onClick={() => setPaymentMethod(method)}
+            >
+              {method}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSubmit}>
-          {/* Customer ID */}
-          <label>Customer ID</label>
-          <input
-            type="text"
-            value={customerId}
-            readOnly
-            style={{ background: "#f1f1f1", color: "#333" }}
-          />
-
-          {/* Amount Due */}
-          <label>Amount Due</label>
-          <input
-            type="number"
-            value={amountDue}
-            readOnly
-            disabled
-            style={{ background: "#f1f1f1", color: "#333" }}
-          />
-
-          {/* Payment Method */}
-          <label>Select Payment Method</label>
-          <div>
-            {["Credit Card", "Debit Card"].map((method) => (
-              <button
-                type="button"
-                key={method}
-                onClick={() => {
-                  setPaymentMethod(method);
-                  setPin(""); // reset pin when switching method
-                  setCardNumber(""); // reset card number when switching method
-                  setCardError("");
-                  setPinError("");
-                }}
-                className={`method-btn ${paymentMethod === method ? "active" : ""}`}
-              >
-                {method}
-              </button>
-            ))}
-          </div>
-
-          {/* Show Card Number and PIN fields if Credit Card or Debit Card is selected */}
+          {/* Card Details */}
           {(paymentMethod === "Credit Card" || paymentMethod === "Debit Card") && (
-            <div style={{ margin: "1em 0" }}>
-              <label>
-                {paymentMethod} Number
-                <input
-                  type="text"
-                  value={cardNumber}
-                  onChange={e => {
-                    // Only allow digits, max 16 (standard card length)
-                    const val = e.target.value.replace(/\D/g, "").slice(0, 16);
-                    setCardNumber(val);
-                    setCardError("");
-                  }}
-                  maxLength={16}
-                  minLength={13}
-                  pattern="^(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|3[47][0-9]{13}|6(?:011|5[0-9]{2})[0-9]{12})$"
-                  placeholder="Enter your card number"
-                  required
-                  style={{ letterSpacing: "0.15em", fontSize: "1.1em", textAlign: "center" }}
-                />
-              </label>
-              {cardError && (
-                <span style={{ color: "red", fontSize: "0.95em", display: "block", marginTop: "0.2em" }}>
-                  {cardError}
-                </span>
-              )}
-              <label style={{ marginTop: "0.8em" }}>Enter 6-digit PIN</label>
+            <>
+              <label>Card Number</label>
               <input
-                type="password"
-                value={pin}
-                onChange={e => {
-                  // Only allow digits, max 6
-                  const val = e.target.value.replace(/\D/g, "").slice(0, 6);
-                  setPin(val);
-                  setPinError("");
-                }}
-                maxLength={6}
-                pattern="\d{6}"
-                placeholder="******"
+                type="text"
+                placeholder="0000 0000 0000 0000"
+                value={cardNumber}
+                onChange={(e) =>
+                  setCardNumber(e.target.value.replace(/\D/g, "").slice(0, 16))
+                }
                 required
-                style={{ letterSpacing: "0.3em", fontSize: "1.2em", textAlign: "center" }}
               />
-              {pinError && (
-                <span style={{ color: "red", fontSize: "0.95em", display: "block", marginTop: "0.2em" }}>
-                  {pinError}
-                </span>
-              )}
-            </div>
+
+              <div className="row">
+                <div>
+                  <label>Expiry Date</label>
+                  <input
+                    type="text"
+                    placeholder="MM/YY"
+                    value={expiry}
+                    onChange={(e) => setExpiry(e.target.value)}
+                    required
+                  />
+                </div>
+                <div>
+                  <label>CVV</label>
+                  <input
+                    type="password"
+                    placeholder="•••"
+                    value={cvv}
+                    onChange={(e) =>
+                      setCvv(e.target.value.replace(/\D/g, "").slice(0, 3))
+                    }
+                    required
+                  />
+                </div>
+              </div>
+            </>
           )}
 
-          {/* Gmail Field */}
-          <label>
-            Gmail ID*
-            <input
-              type="email"
-              value={gmail}
-              onChange={e => setGmail(e.target.value)}
-              required
-              placeholder="Enter your gmail"
-              style={{ marginBottom: "1em" }}
-              readOnly // <-- make it readOnly if you don't want user to edit
-            />
-          </label>
+          {/* Billing Address */}
+          <label>Address</label>
+          <input
+            type="text"
+            placeholder="123 Main St"
+            value={address}
+            onChange={(e) => setAddress(e.target.value)}
+            required
+          />
 
-          {/* Payment Summary */}
-          <div className="payment-summary">
-            <p><strong>Customer ID:</strong> {customerId || "--"}</p>
-            <p><strong>Amount Due:</strong> {amountDue ? `${amountDue}` : "--"}</p>
-            <p><strong>Payment Method:</strong> {paymentMethod || "--"}</p>
+          <div className="row">
+            <div>
+              <label>City</label>
+              <input
+                type="text"
+                placeholder="Anytown"
+                value={city}
+                onChange={(e) => setCity(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>State</label>
+              <input
+                type="text"
+                placeholder="CA"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                required
+              />
+            </div>
+            <div>
+              <label>Pin Code</label>
+              <input
+                type="text"
+                placeholder="123456"
+                value={zip}
+                onChange={(e) => setZip(e.target.value)}
+                required
+              />
+            </div>
           </div>
 
-          {/* Submit Button */}
-          <button type="submit">Submit Payment</button>
+          {/* Gmail */}
+          <label>Gmail ID</label>
+          <input type="email" value={gmail} readOnly required />
+
+          {/* Payment Summary */}
+          <div className="summary-box">
+            <p>
+              <strong>Customer ID:</strong> {customerId}
+            </p>
+            <p>
+              <strong>Amount Due:</strong> ₹{amountDue}
+            </p>
+            <p>
+              <strong>Method:</strong> {paymentMethod}
+            </p>
+          </div>
+
+          {/* Submit */}
+          <button type="submit" className="pay-btn">
+            Pay Now
+          </button>
+
+          {/* Messages */}
           {success && (
-            <div style={{
-              marginTop: "1.2em",
-              color: "#388e3c",
-              fontWeight: 600,
-              fontSize: "1.1rem",
-              textAlign: "center"
-            }}>
-              Payment Successful! <br />
-              You can now access your dashboard.
-            </div>
+            <p
+              style={{
+                color: "#22c55e",
+                marginTop: "10px",
+                textAlign: "center",
+              }}
+            >
+              ✅ Payment Successful! Redirecting...
+            </p>
+          )}
+          {error && (
+            <p
+              style={{
+                color: "red",
+                marginTop: "10px",
+                textAlign: "center",
+              }}
+            >
+              {error}
+            </p>
           )}
         </form>
       </div>

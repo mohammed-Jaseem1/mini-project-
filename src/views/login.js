@@ -160,9 +160,6 @@ function Login() {
 
             {error && <div className="error">{error}</div>}
 
-            <div className="forgot-password">
-              <a href="/forgot">Forgot Password?</a>
-            </div>
 
             <button type="submit" className="login-btn">Login to your account</button>
           </form>

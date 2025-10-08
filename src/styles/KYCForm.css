@@ -1,141 +1,117 @@
-/* KYCForm.css */
+/* NewGasConnection.css */
 
 .kyc-form-container {
-  max-width: 900px;
-  margin: 2rem auto;
-  padding: 2rem;
-  background: linear-gradient(135deg, #f0f9ff, #c9e4ff, #e3d7ff);
-  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
-  border-radius: 15px;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-  border: 1px solid #d0d0d0;
-}
-
-
-h2 {
-  text-align: center;
-  color: #2c3e50;
-  margin-bottom: 1rem;
-}
-
-.required-note,
-.info-text,
-.blue-link {
-  font-size: 0.95rem;
-  margin-bottom: 0.5rem;
-  text-align: center;
-}
-
-.blue-link {
-  color: #0077cc;
-  text-decoration: underline;
-  margin-top: 0.5rem;
-}
-
-.kyc-form-section {
-  border: 1px solid #e0e0e0;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-  border-radius: 8px;
-  background-color: #f9f9f9;
-}
-
-legend {
-  font-weight: bold;
-  padding: 0 10px;
-  color: #444;
-}
-
-label {
-  display: block;
-  margin-bottom: 1rem;
-  font-weight: 500;
-}
-
-input[type="text"],
-input[type="date"],
-input[type="tel"],
-input[type="email"],
-select {
-  width: 100%;
-  padding: 0.6rem 0.75rem;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  font-size: 0.95rem;
+  max-width: 100vw;         /* Fill full width of viewport */
+  min-height: 100vh;        /* Fill full height of viewport */
+  margin: 0;
+  padding: 2.5rem 3rem;
+  background-color: #1a1a2e; /* Dark background */
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+  border-radius: 0;         /* Remove border radius for full screen */
+  font-family: 'Inter', sans-serif;
+  color: #e0e0e0; /* Light text */
+  border: none;
   box-sizing: border-box;
-  transition: border-color 0.2s;
+  overflow: auto;
 }
 
-input:focus,
-select:focus {
-  border-color: #0077cc;
-  outline: none;
-  box-shadow: 0 0 3px rgba(0, 119, 204, 0.2);
-}
-
-.kyc-form-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.kyc-form-row label {
-  flex: 1 1 30%;
-  min-width: 200px;
-}
-
-small {
-  font-size: 0.8rem;
-  color: #666;
-}
-
-span {
-  display: inline-block;
-  margin: 0.5rem 0;
-  font-size: 0.9rem;
-  font-style: italic;
-  color: #888;
-}
-
-.kyc-form-submit {
+.kyc-form-container h2 {
   text-align: center;
-  margin-top: 2rem;
+  color: #e0e0e0;
+  margin-bottom: 0.8rem;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: -0.5px;
 }
 
-.kyc-form-submit button {
-  background-color: #0077cc;
-  color: white;
-  padding: 0.8rem 2rem;
+.kyc-form-container p {
+  text-align: center;
+  color: #999;
+  margin-bottom: 2rem;
   font-size: 1rem;
+}
+
+.form-group {
+  margin-bottom: 1.5rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.6rem;
+  font-weight: 500;
+  color: #c0c0c0;
+  font-size: 0.95rem;
+}
+
+.form-group input[type="text"],
+.form-group input[type="date"],
+.form-group select {
+  width: 100%;
+  padding: 0.9rem 1.2rem;
+  border: 1px solid #3a3a4c;
+  border-radius: 8px;
+  font-size: 1rem;
+  background-color: #2a2a3e; /* Darker input background */
+  color: #e0e0e0;
+  box-sizing: border-box;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  -webkit-appearance: none; /* Remove default styling for date input */
+  appearance: none;
+}
+
+.form-group input::placeholder {
+  color: #777;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  border-color: #007bff; /* Blue focus border */
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+}
+
+.form-group select {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23e0e0e0%22%20d%3D%22M287%2069.4a17.6%2017.6%200%200%02213.2-13.2L146.2%20268.6%2029.7%20131.2c-6.5-6.5-17.2-6.5-23.7%200-6.5%206.5-6.5%2017.2%200%2023.7l130.6%20130.6c3.2%203.2%207.6%204.9%2011.8%204.9s8.6-1.6%2011.8-4.9l130.6-130.6c6.5-6.6%206.5-17.3%200-23.8z%22%2F%3E%3C%2Fsvg%3E');
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 0.8em;
+  padding-right: 2.5rem;
+}
+
+.submit-button-container {
+  text-align: center;
+  margin-top: 3rem;
+}
+
+.submit-button-container button {
+  background-color: #007bff; /* Blue button */
+  color: white;
+  padding: 1rem 2.5rem;
+  font-size: 1.1rem;
   font-weight: 600;
   border: none;
-  border-radius: 6px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.3s;
+  transition: background-color 0.3s, transform 0.2s;
+  letter-spacing: 0.5px;
 }
 
-.kyc-form-submit button:hover {
-  background-color: #005fa3;
+.submit-button-container button:hover {
+  background-color: #0056b3;
+  transform: translateY(-2px);
 }
 
-p[style*="color: red"] {
-  color: #e74c3c !important;
-  font-weight: 500;
-  text-align: center;
-  margin-top: 1rem;
+.submit-button-container button:active {
+  transform: translateY(0);
 }
 
-@media screen and (max-width: 768px) {
-  .kyc-form-row {
-    flex-direction: column;
-  }
-
-  .kyc-form-row label {
-    flex: 1 1 100%;
-  }
-
-  .kyc-form-container {
-    padding: 1rem;
-  }
+/* Specific styling for the date input icon */
+.form-group input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(1); /* Makes the calendar icon white */
+  cursor: pointer;
 }
+
+/* Remove original KYCForm.css styles, as they are no longer needed */
+/* If you have any other global styles you want to keep, make sure they don't conflict */

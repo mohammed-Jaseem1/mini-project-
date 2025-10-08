@@ -7,9 +7,9 @@ router.post("/", async (req, res) => {
   try {
     const { fullName, email, phone, password } = req.body;
 
-    // Check for duplicate email, phone, or name
+    // Check for duplicate email or phone only (remove name check)
     const existingUser = await User.findOne({
-      $or: [{ email }, { phone }, { fullName }],
+      $or: [{ email }, { phone }],
     });
 
     if (existingUser) {
@@ -19,9 +19,7 @@ router.post("/", async (req, res) => {
       if (existingUser.phone === phone) {
         return res.status(400).json({ message: "This phone number is already registered" });
       }
-      if (existingUser.fullName === fullName) {
-        return res.status(400).json({ message: "This name is already taken" });
-      }
+      // Name check removed
     }
 
     // Hash the new password

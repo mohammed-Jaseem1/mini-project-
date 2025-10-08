@@ -1,36 +1,185 @@
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
-import "../styles/userdash.css";
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  IconButton,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  Button,
+  Menu,
+  MenuItem,
+  Avatar,
+  Alert,
+  CircularProgress,
+  useTheme,
+  ListItemIcon // Add this import
+} from '@mui/material';
+import {
+  Edit,
+  Logout
+} from '@mui/icons-material';
+import { styled } from '@mui/material/styles';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts'; // For the graph
+
+
+const Main = styled('main')(({ theme }) => ({
+  flexGrow: 1,
+  padding: theme.spacing(3),
+  marginTop: 64, // To account for the fixed AppBar
+  backgroundColor: '#1a1a2e', // Dark background for the main content area
+  minHeight: 'calc(100vh - 64px)', // Ensure it takes full height below app bar
+}));
+
+const CardStyled = styled(Card)(({ theme }) => ({
+  backgroundColor: '#162447', // Darker blue for cards
+  color: '#e0e0e0', // Light text
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+}));
+
+const AlertStatusCard = styled(Card)(({ theme, status }) => ({
+  backgroundColor: status === 'Normal' ? '#27a644' : '#d32f2f', // Green for Normal, Red for Alert
+  color: '#ffffff',
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
+
+const GasLevelChartCard = styled(Card)(({ theme }) => ({
+  backgroundColor: '#162447',
+  color: '#e0e0e0',
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+  padding: theme.spacing(2),
+}));
+
+const TableStyled = styled('table')(({ theme }) => ({
+  width: '100%',
+  borderCollapse: 'collapse',
+  marginTop: theme.spacing(2),
+  '& th, & td': {
+    padding: theme.spacing(1.5),
+    textAlign: 'left',
+    borderBottom: '1px solid #334b6b', // Lighter border for table rows
+    color: '#e0e0e0',
+  },
+  '& th': {
+    fontWeight: 'bold',
+    color: '#8e9aaf', // Lighter color for table headers
+  },
+}));
+
+const TubeTypeCard = styled(Card)(({ theme, tubeType }) => ({
+  backgroundColor: tubeType === 'Domestic' ? '#4a4a4a' : '#1976d2', // Grey for Domestic, Blue for Commercial
+  color: '#ffffff',
+  borderRadius: theme.shape.borderRadius,
+  boxShadow: '0px 4px 10px rgba(0, 0, 0, 0.3)',
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+}));
 
 const GasMonitorDashboard = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [gasData, setGasData] = useState(null);
   const [error, setError] = useState("");
   const [approved, setApproved] = useState(null);
+  const [autoBookingMessage, setAutoBookingMessage] = useState('');
+  const [connectionDetails, setConnectionDetails] = useState({
+    date: null,
+    type: 'Domestic',
+    testYears: 15
+  });
+  const theme = useTheme(); // Access the theme palette
 
   const dropdownRef = useRef();
-  const sidebarRef = useRef();
   const navigate = useNavigate();
+
+  // Mock data for the graph (replace with real data from backend)
+  const graphData = [
+    { name: 'Mon', pv: 15 },
+    { name: 'Tue', pv: 22 },
+    { name: 'Wed', pv: 18 },
+    { name: 'Thu', pv: 25 },
+    { name: 'Fri', pv: 35 },
+    { name: 'Sat', pv: 28 },
+    { name: 'Sun', pv: 38 },
+  ];
+
+  // Helper function to determine status based on gas level
+  const getStatusFromLevel = (level) => {
+    if (level < 15) return 'Normal';
+    if (level < 25) return 'Warning';
+    return 'Danger';
+  };
+
+  // Dynamic recent alerts based on gasData
+  const recentAlerts = gasData ? [
+    { 
+      timestamp: new Date().toLocaleString(),
+      device: 'Main Sensor',
+      type: 'LPG',
+      level: `${gasData.gasLevel} ppm`,
+      status: getStatusFromLevel(gasData.gasLevel)
+    },
+    { 
+      timestamp: new Date(Date.now() - 30*60000).toLocaleString(), // 30 minutes ago
+      device: 'Main Sensor',
+      type: 'LPG',
+      level: `${Math.max(0, gasData.gasLevel - 2)} ppm`,
+      status: getStatusFromLevel(Math.max(0, gasData.gasLevel - 2))
+    },
+    { 
+      timestamp: new Date(Date.now() - 60*60000).toLocaleString(), // 1 hour ago
+      device: 'Main Sensor',
+      type: 'LPG',
+      level: `${Math.max(0, gasData.gasLevel - 5)} ppm`,
+      status: getStatusFromLevel(Math.max(0, gasData.gasLevel - 5))
+    }
+  ] : [];
 
   // ✅ Check for admin approval
   useEffect(() => {
     async function checkApproval() {
       try {
-        const res = await fetch("http://localhost:5000/api/payments/check", {
+        // Always get the logged-in user's email first
+        const userRes = await fetch("http://localhost:5000/api/user/me", {
+          method: "GET",
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
+        let userEmail = "";
+        if (userRes.ok) {
+          const userData = await userRes.json();
+          userEmail = userData.email;
+        }
+        // Now check KYC status for this email
+        const res = await fetch(`http://localhost:5000/api/kyc/status-and-action?email=${encodeURIComponent(userEmail)}`, {
           method: "GET",
           credentials: "include",
           headers: { "Content-Type": "application/json" },
         });
         if (res.ok) {
           const data = await res.json();
-          setApproved(data.approved); // expects { approved: true/false }
-          if (!data.approved) {
-            // Optionally redirect or show waiting message
+          // Debug: log the returned status
+          console.log("KYC status response:", data);
+          // Allow dashboard if status is approved or redirectToPayment is true
+          const isApproved = data.status === "approved" || data.redirectToPayment === true;
+          setApproved(isApproved);
+          if (!isApproved) {
             navigate("/waitingapproval");
           }
+        } else {
+          setApproved(false);
+          navigate("/waitingapproval");
         }
-      } catch {
+      } catch (err) {
         setApproved(false);
         navigate("/waitingapproval");
       }
@@ -51,7 +200,13 @@ const GasMonitorDashboard = () => {
         if (res.ok) {
           const data = await res.json();
           setGasData(data);
-          setError(""); // clear error if data is fetched
+          // Check gas level and set auto-booking message
+          if (data.gasLevel <= 20) {
+            setAutoBookingMessage('LPG cylinder has been automatically booked due to low gas level.');
+          } else {
+            setAutoBookingMessage('');
+          }
+          setError("");
         } else {
           const errData = await res.json();
           setGasData(null);
@@ -83,13 +238,6 @@ const GasMonitorDashboard = () => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
         setDropdownOpen(false);
       }
-      if (
-        sidebarRef.current &&
-        !sidebarRef.current.contains(event.target) &&
-        !event.target.classList.contains("hamburger")
-      ) {
-        setSidebarOpen(false);
-      }
     }
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
@@ -100,7 +248,6 @@ const GasMonitorDashboard = () => {
     localStorage.clear();
     window.location.href = "/login";
   };
-  const handleSidebarToggle = () => setSidebarOpen((open) => !open);
 
   // Play alarm sound and show notification when gas leakage is detected
   useEffect(() => {
@@ -130,253 +277,394 @@ const GasMonitorDashboard = () => {
     }
   }, [gasData]);
 
+  // Add this effect after other useEffects
+  useEffect(() => {
+    const fetchConnectionDetails = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/kyc/user/me", {
+          credentials: "include",
+          headers: { "Content-Type": "application/json" },
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setConnectionDetails({
+            date: new Date(data.createdAt),
+            type: data.connectionType || 'Domestic', // Default to Domestic if not specified
+            testYears: data.connectionType === 'Commercial' ? 10 : 15 // 10 years for Commercial, 15 for Domestic
+          });
+        }
+      } catch (err) {
+        console.error('Error fetching connection details:', err);
+      }
+    };
+    fetchConnectionDetails();
+  }, []);
+
+  // Add this new effect to fetch KYC details for connection date
+  useEffect(() => {
+    const fetchConnectionDate = async () => {
+      try {
+        const res = await fetch("http://localhost:5000/api/kyc/requests?email=" + encodeURIComponent(localStorage.getItem('userEmail')), {
+          credentials: "include"
+        });
+        
+        if (res.ok) {
+          const kycData = await res.json();
+          const approvedRequest = kycData.find(req => req.status === 'approved');
+          
+          if (approvedRequest) {
+            setConnectionDetails({
+              date: new Date(approvedRequest.createdAt),
+              type: approvedRequest.connectionType || 'Domestic',
+              testYears: approvedRequest.connectionType === 'Commercial' ? 10 : 15
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Error fetching connection date:', err);
+      }
+    };
+    fetchConnectionDate();
+  }, []);
+
+  // Add helper function for date calculations
+  const calculateNextTestDate = (connectionDate, years) => {
+    if (!connectionDate) return 'Loading...';
+    const nextTest = new Date(connectionDate);
+    nextTest.setFullYear(nextTest.getFullYear() + years);
+    return nextTest.toLocaleDateString();
+  };
+
   if (approved === false) {
     return null; // or show a loading spinner
   }
 
+  const appBarColor = '#0a192f'; // Darker blue for AppBar
+
   return (
-    <div className="dashboard-container">
-      {/* Sidebar Drawer */}
-      {sidebarOpen && (
-        <aside
-          className="sidebar-drawer open"
-          ref={sidebarRef}
-          style={{ left: 0, right: "auto" }}
-        >
-          <div className="sidebar-header">
-            <span className="sidebar-title">Menu</span>
-            <button
-              className="sidebar-close"
-              onClick={() => setSidebarOpen(false)}
-              title="Close"
-              style={{
-                left: "auto",
-                right: 0,
-                position: "absolute",
-              }}
-            >
-              &times;
-            </button>
-          </div>
-          <nav className="sidebar-nav">
-            <ul>
-              <li>
-                <a href="/userdash" onClick={() => setSidebarOpen(false)}>
-                  Dashboard
-                </a>
-              </li>
-              <li>
-                <a href="/history" onClick={() => setSidebarOpen(false)}>
-                  History
-                </a>
-              </li>
-              <li>
-                <a href="/payment" onClick={() => setSidebarOpen(false)}>
-                  Payment
-                </a>
-              </li>
-              <li>
-                <a href="/feedback" onClick={() => setSidebarOpen(false)}>
-                  Feedback
-                </a>
-              </li>
-              <li>
-                <button
-                  className="sidebar-logout-btn"
-                  style={{
-                    width: "100%",
-                    padding: "10px 0",
-                    background: "#d32f2f",
-                    color: "#fff",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: "pointer",
-                    marginTop: "1em",
-                    fontWeight: 500,
-                  }}
-                  onClick={handleLogout}
-                >
-                  Logout
-                </button>
-              </li>
-            </ul>
-          </nav>
-        </aside>
-      )}
-
-      {/* Sidebar Overlay */}
-      {sidebarOpen && (
-        <div
-          className="sidebar-overlay"
-          style={{ left: 0, right: "auto" }}
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
-
-      {/* Header */}
-      <header className="dashboard-header">
-        <button
-          className="hamburger"
-          aria-label="Open menu"
-          onClick={handleSidebarToggle}
-        >
-          <span />
-          <span />
-          <span />
-        </button>
-        <h1>Gas Monitor</h1>
-
-        {/* Profile Dropdown */}
-        <div
-          className="profile-dropdown"
-          ref={dropdownRef}
-          style={{ position: "relative" }}
-        >
-          <button
-            className="profile-btn"
-            title="Profile"
+    <Box sx={{ display: 'flex' }}>
+      <AppBar position="fixed" sx={{ zIndex: theme.zIndex.drawer + 1, backgroundColor: appBarColor }}>
+        <Toolbar>
+          <Typography variant="h6" component="div" sx={{ flexGrow: 1, color: '#e0e0e0' }}>
+            GasWatch
+          </Typography>
+          {/* Desktop Navigation */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <Button color="inherit" onClick={() => navigate("/userdash")} sx={{ color: '#e0e0e0' }}>Dashboard</Button>
+            <Button color="inherit" onClick={() => navigate("/reports")} sx={{ color: '#e0e0e0' }}>Reports</Button>
+            <Button color="inherit" onClick={() => navigate("/payment")} sx={{ color: '#e0e0e0' }}>Payment</Button>
+            <Button color="inherit" onClick={() => navigate("/feedback")} sx={{ color: '#e0e0e0' }}>Feedback</Button>
+            <Button color="inherit" onClick={() => navigate("/history")} sx={{ color: '#e0e0e0' }}>History</Button>
+          </Box>
+          <IconButton
             onClick={handleProfileClick}
+            sx={{ ml: 2 }}
+            ref={dropdownRef} // Attach ref here
           >
-            <svg
-              width="48"
-              height="48"
-              viewBox="0 0 48 48"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-              style={{
-                borderRadius: "50%",
-                background: "#e0e0e0",
-                display: "block",
-              }}
-            >
-              <circle cx="24" cy="24" r="24" fill="#e0e0e0" />
-              <circle cx="24" cy="20" r="8" fill="#bdbdbd" />
-              <ellipse cx="24" cy="34" rx="12" ry="7" fill="#bdbdbd" />
-            </svg>
-          </button>
-          {dropdownOpen && (
-            <div
-              className="profile-dropdown-list"
-              style={{
-                position: "absolute",
-                right: 0,
-                top: "110%",
-                background: "#fff",
-                border: "1px solid #e0e0e0",
-                borderRadius: "8px",
-                boxShadow: "0 4px 16px rgba(0,0,0,0.12)",
-                minWidth: "150px",
-                zIndex: 10,
-              }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="dropdown-item"
-                onClick={() => {
-                  setDropdownOpen(false);
-                  navigate("/editprofile");
-                }}
-              >
-                Edit Profile
-              </button>
-            </div>
-          )}
-        </div>
-      </header>
+            <Avatar />
+          </IconButton>
+          <Menu
+            anchorEl={dropdownRef.current}
+            open={dropdownOpen}
+            onClose={() => setDropdownOpen(false)}
+            anchorOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            transformOrigin={{
+              vertical: 'top',
+              horizontal: 'right',
+            }}
+            PaperProps={{
+              sx: {
+                backgroundColor: appBarColor, // Dark background for dropdown
+                color: '#e0e0e0', // Light text for dropdown
+              },
+            }}
+          >
+            <MenuItem onClick={() => {
+              setDropdownOpen(false);
+              navigate("/editprofile");
+            }}>
+              <ListItemIcon><Edit fontSize="small" sx={{ color: '#e0e0e0' }} /></ListItemIcon>
+              Edit Profile
+            </MenuItem>
+            <MenuItem onClick={handleLogout}>
+              <ListItemIcon><Logout fontSize="small" sx={{ color: '#e0e0e0' }} /></ListItemIcon>
+              Logout
+            </MenuItem>
+          </Menu>
+        </Toolbar>
+      </AppBar>
 
-      {/* Main Content */}
-      <main className="dashboard-main">
-        <h2>Dashboard</h2>
+      <Main>
+        <Box sx={{ marginBottom: 4 }}>
+          <Typography variant="h4" gutterBottom sx={{ color: '#e0e0e0' }}>
+            Dashboard
+          </Typography>
+          <Typography variant="body1" sx={{ color: '#8e9aaf' }}>
+            Overview of your gas monitoring system
+          </Typography>
+        </Box>
+
         {error ? (
-          <p style={{ color: "red", fontWeight: 500 }}>{error}</p>
-        ) : gasData ? (
+          <Alert severity="error">{error}</Alert>
+        ) : !gasData ? (
+          <Box display="flex" justifyContent="center">
+            <CircularProgress />
+          </Box>
+        ) : (
           <>
-            {/* Always show backend alert message if present, support multiple lines */}
             {gasData.alertMessage && (
-              <div className="alert-box">
+              <Alert 
+                severity={gasData.leakageDetected ? "error" : "warning"}
+                action={
+                  gasData.gasLevel <= 20 && (
+                    <Box>
+                      <Button color="inherit" size="small" onClick={() => navigate('/payment')}>
+                        Payment
+                      </Button>
+                      <Button color="inherit" size="small" onClick={() => setGasData({ ...gasData, alertMessage: '' })}>
+                        Cancel
+                      </Button>
+                    </Box>
+                  )
+                }
+                sx={{ backgroundColor: gasData.leakageDetected ? '#d32f2f' : '#ed6c02', color: '#ffffff', mb: 4 }}
+              >
                 {gasData.alertMessage.split('\n').map((msg, idx) => (
                   <div key={idx}>{msg}</div>
                 ))}
-                {/* Show buttons if gas level is 20 or below */}
-                {gasData.gasLevel <= 20 && (
-                  <div style={{ marginTop: '1em', display: 'flex', gap: '1em' }}>
-                    <button
-                      style={{ background: '#1976d2', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.7em 1.5em', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => {
-                        localStorage.setItem('gasRefilled', 'true');
-                        navigate('/payment');
-                      }}
-                    >
-                      Payment
-                    </button>
-                    <button
-                      style={{ background: '#d32f2f', color: '#fff', border: 'none', borderRadius: '6px', padding: '0.7em 1.5em', fontWeight: 600, cursor: 'pointer' }}
-                      onClick={() => setGasData({ ...gasData, alertMessage: '' })}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                )}
-              </div>
+              </Alert>
             )}
-            <div className="stats-container">
-              <div
-                className="stat-box"
-                style={{ cursor: "pointer" }}
-                onClick={() => navigate("/gasmonitoring")}
-              >
-                <h3>Current Gas Level</h3>
-                <p>{gasData.gasLevel}%</p>
-              </div>
-              <div className="stat-box">
-                <h3>Gas Leakage</h3>
-                <p>{gasData.leakageDetected ? "🚨 Detected" : "✅ Safe"}</p>
-              </div>
-              <div
-                className="stat-box alert-box"
-                style={{
-                  background: gasData.leakageDetected ? "#fff3e0" : "#e3f2fd",
-                  color: gasData.leakageDetected ? "#d32f2f" : "#1976d2",
-                  border: "2px solid",
-                  borderColor: gasData.leakageDetected ? "#d32f2f" : "#1976d2",
-                  borderRadius: "10px",
-                  padding: "1em",
-                  fontWeight: 600,
-                  boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
+
+            {autoBookingMessage && (
+              <Alert 
+                severity="info"
+                sx={{ 
+                  mb: 4,
+                  backgroundColor: '#1976d2',
+                  color: '#ffffff',
+                  '& .MuiAlert-icon': {
+                    color: '#ffffff'
+                  }
                 }}
               >
-                <h3 style={{ marginBottom: "0.5em" }}>Alert Notification</h3>
-                <div style={{ fontSize: "1.1em" }}>
-                  {gasData.alertMessage
-                    ? gasData.alertMessage.split('\n').map((msg, idx) => (
-                        <div key={idx}>{msg}</div>
-                      ))
-                    : "No alerts"}
-                </div>
-              </div>
-              <div className="stat-box">
-                <h3>Estimate Date</h3>
-                <p>
-                  {gasData.estimateDate
-                    ? gasData.estimateDate
-                    : "2024-12-01"}
-                </p>
-              </div>
-              <div className="stat-box">
-                <h3>Tube Expiry Date</h3>
-                <p>
-                  {gasData.tubeExpiryDate
-                    ? gasData.tubeExpiryDate
-                    : "2025-06-01"}
-                </p>
-              </div>
-            </div>
+                {autoBookingMessage}
+              </Alert>
+            )}
+
+            <Grid container spacing={3} sx={{ mb: 4 }}>
+              <Grid item xs={12} md={4}>
+                <CardStyled sx={{ minHeight: 150 }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" color="#8e9aaf" gutterBottom>
+                      Current Gas Level
+                    </Typography>
+                    <Typography variant="h3" sx={{ color: '#4CAF50', fontWeight: 'bold' }}> {/* Green for gas level */}
+                      {gasData.gasLevel || 15} ppm
+                    </Typography>
+                  </CardContent>
+                </CardStyled>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <AlertStatusCard status={gasData.leakageDetected ? 'Alert' : 'Normal'} sx={{ minHeight: 150 }}>
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <Typography variant="subtitle1" color="inherit" gutterBottom>
+                      Alert Status
+                    </Typography>
+                    <Typography variant="h3" sx={{ color: 'inherit', fontWeight: 'bold' }}>
+                      {gasData.leakageDetected ? "Alert" : "Normal"}
+                    </Typography>
+                  </CardContent>
+                </AlertStatusCard>
+              </Grid>
+
+              <Grid item xs={12} md={4}>
+                <CardStyled sx={{ minHeight: 150 }}>
+                  <CardContent>
+                    <Typography variant="subtitle1" color="#8e9aaf" gutterBottom>
+                      Device Health
+                    </Typography>
+                    <Typography variant="h3" sx={{ color: '#4CAF50', fontWeight: 'bold' }}> {/* Green for Online */}
+                      Online
+                    </Typography>
+                  </CardContent>
+                </CardStyled>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TubeTypeCard tubeType="Domestic" sx={{ minHeight: 150 }}>
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <Typography variant="subtitle1" color="inherit" gutterBottom>
+                      Domestic LPG Cylinder
+                    </Typography>
+                    <Typography variant="h5" sx={{ color: 'inherit', fontWeight: 'bold', mb: 1 }}>
+                      Grey/Red • Household Use
+                    </Typography>
+                    <Typography variant="body2">
+                      Next Test: {calculateNextTestDate(connectionDetails.date, 15)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                      Connection Date: {connectionDetails.date ? 
+                        connectionDetails.date.toLocaleDateString() : 'Loading...'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#ffd700' }}>
+                      Test Required Every 15 Years
+                    </Typography>
+                  </CardContent>
+                </TubeTypeCard>
+              </Grid>
+
+              <Grid item xs={12} md={6}>
+                <TubeTypeCard tubeType="Commercial" sx={{ minHeight: 150 }}>
+                  <CardContent sx={{ textAlign: 'center' }}>
+                    <Typography variant="subtitle1" color="inherit" gutterBottom>
+                      Commercial LPG Cylinder
+                    </Typography>
+                    <Typography variant="h5" sx={{ color: 'inherit', fontWeight: 'bold', mb: 1 }}>
+                      Blue • Restaurant Use
+                    </Typography>
+                    <Typography variant="body2">
+                      Next Test: {calculateNextTestDate(connectionDetails.date, 10)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
+                      Connection Date: {connectionDetails.date ? 
+                        connectionDetails.date.toLocaleDateString() : 'Loading...'}
+                    </Typography>
+                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#ffd700' }}>
+                      Test Required Every 10-15 Years
+                    </Typography>
+                  </CardContent>
+                </TubeTypeCard>
+              </Grid>
+            </Grid>
+
+            <Typography variant="h6" gutterBottom sx={{ color: '#e0e0e0', mt: 4 }}>
+              Gas Levels Over Time
+            </Typography>
+            <Typography variant="body2" sx={{ color: '#8e9aaf', mb: 2 }}>
+              Last: 7 Days <span style={{ color: '#d32f2f' }}>-2%</span>
+            </Typography>
+            <GasLevelChartCard sx={{ mb: 4, height: 300, position: 'relative' }}>
+              <Box sx={{ position: 'absolute', top: theme.spacing(2), right: theme.spacing(2), color: '#e0e0e0', fontWeight: 'bold', fontSize: '1.5rem' }}>
+                {gasData.gasLevel || 15} ppm
+              </Box>
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart
+                  data={graphData}
+                  margin={{
+                    top: 20,
+                    right: 30,
+                    left: 20,
+                    bottom: 5,
+                  }}
+                >
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334b6b" />
+                  <XAxis dataKey="name" stroke="#8e9aaf" />
+                  <YAxis stroke="#8e9aaf" />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#1a1a2e', border: '1px solid #334b6b', color: '#e0e0e0' }}
+                    itemStyle={{ color: '#e0e0e0' }}
+                    labelStyle={{ color: '#e0e0e0' }}
+                  />
+                  <Line type="monotone" dataKey="pv" stroke="#00C49F" strokeWidth={3} dot={{ stroke: '#00C49F', strokeWidth: 2, r: 4 }} activeDot={{ r: 6 }} />
+                </LineChart>
+              </ResponsiveContainer>
+            </GasLevelChartCard>
+
+            <Typography variant="h6" gutterBottom sx={{ color: '#e0e0e0', mt: 4 }}>
+              Recent Alerts
+            </Typography>
+            <CardStyled sx={{ mb: 4 }}>
+              <CardContent>
+                <TableStyled>
+                  <thead>
+                    <tr>
+                      <th>TIMESTAMP</th>
+                      <th>DEVICE</th>
+                      <th>TYPE</th>
+                      <th>LEVEL</th>
+                      <th>STATUS</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {recentAlerts.map((alert, index) => (
+                      <tr key={index}>
+                        <td>{alert.timestamp}</td>
+                        <td>{alert.device}</td>
+                        <td>{alert.type}</td>
+                        <td>{alert.level}</td>
+                        <td>
+                          <Typography
+                            component="span"
+                            sx={{
+                              borderRadius: '4px',
+                              padding: '4px 8px',
+                              fontWeight: 'bold',
+                              backgroundColor: alert.status === 'Normal' ? '#27a644' : '#ed6c02',
+                              color: '#ffffff',
+                            }}
+                          >
+                            {alert.status}
+                          </Typography>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </TableStyled>
+              </CardContent>
+            </CardStyled>
+
+            <Typography variant="h6" gutterBottom sx={{ color: '#e0e0e0', mt: 4 }}>
+              Quick Actions
+            </Typography>
+            <Box sx={{ display: 'flex', gap: 2 }}>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#162447',
+                  color: '#e0e0e0',
+                  '&:hover': {
+                    backgroundColor: '#1f3a61',
+                  },
+                }}
+                onClick={() => navigate('/reports')}
+              >
+                View Reports
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#162447',
+                  color: '#e0e0e0',
+                  '&:hover': {
+                    backgroundColor: '#1f3a61',
+                  },
+                }}
+                onClick={() => navigate('/payment')}
+              >
+                Make Payment
+              </Button>
+              <Button
+                variant="contained"
+                sx={{
+                  backgroundColor: '#162447',
+                  color: '#e0e0e0',
+                  '&:hover': {
+                    backgroundColor: '#1f3a61',
+                  },
+                }}
+                onClick={() => navigate('/feedback')}
+              >
+                Send Feedback
+              </Button>
+            </Box>
           </>
-        ) : (
-          <p>Loading gas data...</p>
         )}
-      </main>
-    </div>
+      </Main>
+    </Box>
   );
 };
 

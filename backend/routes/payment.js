@@ -2,22 +2,34 @@ const express = require('express');
 const router = express.Router();
 const Payment1 = require('../models/Payment');
 
+// Save payment with all details
 router.post('/', async (req, res) => {
   try {
-    const { customerId, amountPaid, paymentMethod, cardNumber, gmail } = req.body;
+    const {
+      customerId,
+      amountPaid,
+      paymentMethod,
+      cardLast4Digits,
+      expiry,
+      cvv,
+      billingAddress,
+      gmail
+    } = req.body;
 
     if (!customerId || !amountPaid || !paymentMethod) {
       return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    // When saving payment, set approved: false by default
     const newPayment = new Payment1({
       customerId,
       amountPaid,
       paymentMethod,
-      cardLast4Digits: cardNumber?.slice(-4) || null,
+      cardLast4Digits: cardLast4Digits || null,
+      expiry: expiry || null,
+      cvv: cvv || null,
+      billingAddress: billingAddress || {},
       gmail: gmail || null,
-      approved: false // <-- add this field
+      approved: false
     });
 
     await newPayment.save();
@@ -25,6 +37,26 @@ router.post('/', async (req, res) => {
   } catch (error) {
     console.error('Payment Save Error:', error);
     res.status(500).json({ message: 'Server error while saving payment' });
+  }
+});
+
+// Update the GET route to include all necessary fields
+router.get('/', async (req, res) => {
+  try {
+    const payments = await Payment1.find()
+      .select('customerId amountPaid paymentMethod date approved gmail')
+      .sort({ date: -1 });
+    res.json(payments.map(payment => ({
+      id: payment._id,
+      date: payment.date,
+      amount: payment.amountPaid,
+      status: payment.approved ? 'Completed' : 'Pending',
+      method: payment.paymentMethod,
+      gmail: payment.gmail
+    })));
+  } catch (error) {
+    console.error('Error fetching payments:', error);
+    res.status(500).json({ message: 'Server error while fetching payments' });
   }
 });
 
@@ -58,6 +90,27 @@ router.get('/check', async (req, res) => {
     }
   } catch (error) {
     res.status(500).json({ approved: false, message: 'Server error' });
+  }
+});
+
+// Route for user to get all payments for a specific email
+router.get('/user/:email', async (req, res) => {
+  try {
+    const payments = await Payment1.findByUserGmail(req.params.email);
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
+// Get payments for specific user
+router.get('/getUserPayments/:email', async (req, res) => {
+  try {
+    const payments = await Payment1.find({ gmail: req.params.email })
+      .sort({ date: -1 });
+    res.json(payments);
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
 });
 

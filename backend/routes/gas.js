@@ -4,7 +4,42 @@ const GasMonitor = require('../models/GasMonitor');
 const User = require('../models/User');
 const router = express.Router();
 
-// ✅ GET latest simulated gas status (logged-in user)
+/**
+ * @description Determines gas status based on data from the ESP32.
+ * The backend now TRUSTS the ESP32 to report leaks.
+ * @param {number} gasLevel - The percentage of gas remaining.
+ * @param {number} [digitalValue=0] - The digital reading from the sensor (1 means leak).
+ * @returns {{leakageDetected: boolean, alertMessage: string, status: string}}
+ */
+const determineGasStatus = (gasLevel, digitalValue = 0) => {
+  // Leak status is now determined *only* by the ESP32's report.
+  const leakageDetected = (digitalValue === 1);
+  const isLowGas = (gasLevel < 20);
+  let alertMessage = '';
+  let status = 'normal';
+
+  if (leakageDetected && isLowGas) {
+    status = 'critical';
+    alertMessage = 'CRITICAL: Gas Leak Detected AND Low Tank!';
+  } else if (leakageDetected) {
+    status = 'leak';
+    alertMessage = 'ALARM: Gas Leak Detected!';
+  } else if (isLowGas) {
+    status = 'low';
+    alertMessage = 'WARNING: Low Gas Level! Please Refill Soon.';
+  } else if (gasLevel < 40) {
+    status = 'medium';
+    alertMessage = 'Medium Gas Level.';
+  } else {
+    status = 'normal';
+    alertMessage = 'Gas Level Normal.';
+  }
+
+  return { leakageDetected, alertMessage, status };
+};
+
+// ✅ GET /status (Web Simulator)
+// Simulates CONSUMPTION but NOT leaks. It reflects the last state set by the ESP32.
 router.get('/status', async (req, res) => {
   try {
     const token = req.cookies.token;
@@ -12,103 +47,208 @@ router.get('/status', async (req, res) => {
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
-
     if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // Check last entry for this user
-    let lastEntry = await GasMonitor.findOne({ customerId: user._id }).sort({ createdAt: -1 });
-    let gasLevel = 100;
-    let leakageDetected = false;
-    let alertMessage = '';
-
-    if (lastEntry) {
-      const now = new Date();
-      const diffMs = now - lastEntry.createdAt;
-      const diffSec = diffMs / 1000;
-
-      // If last reading is very recent (<5s), return it instead of creating new
-      if (diffSec < 5) {
-        return res.json(lastEntry);
-      }
-
-      // Decrease gas level by 1 each request
-      gasLevel = Math.max(0, lastEntry.gasLevel - 1);
-    } else {
-      gasLevel = 100; // Always start at 100 for new user
+    let currentEntry = await GasMonitor.findOne({ customerId: user._id });
+    if (!currentEntry) {
+        // If no record exists yet, create one and return it.
+        currentEntry = new GasMonitor({ customerId: user._id, gmail: user.email });
+        await currentEntry.save();
+        return res.json(currentEntry);
     }
 
-    // ✅ Leakage only between 50 and 45
-    leakageDetected = (gasLevel <= 50 && gasLevel >= 45);
-
-    // ✅ Alert logic
-    if (gasLevel < 20 && leakageDetected) {
-      alertMessage = '⚠️ Low Gas Level! Please Refill Soon.\n🚨 Gas Leakage Detected! Take Immediate Action!';
-    } else if (gasLevel < 20) {
-      alertMessage = '⚠️ Low Gas Level! Please Refill Soon.';
-    } else if (leakageDetected) {
-      alertMessage = '🚨 Gas Leakage Detected! Take Immediate Action!';
+    const diffSec = (new Date() - currentEntry.updatedAt) / 1000;
+    if (diffSec < 5) {
+      return res.json(currentEntry); // Return fresh data without changes
     }
+    
+    // Simulate consumption
+    const newGasLevel = Math.max(0, currentEntry.gasLevel - 1);
+    
+    // Determine status based on new level, but crucially, digitalValue is 0
+    // so it won't create a new leak, only reflect a low gas warning.
+    const { alertMessage } = determineGasStatus(newGasLevel, 0);
 
-    // Save entry
-    const reading = new GasMonitor({
-      customerId: user._id,
-      gmail: user.email,
-      gasLevel,
-      leakageDetected,
-      alertMessage,
-    });
+    const updatedReading = await GasMonitor.findOneAndUpdate(
+      { customerId: user._id },
+      { 
+        gasLevel: newGasLevel,
+        alertMessage: alertMessage // Update alert if gas becomes low
+      },
+      { new: true }
+    );
 
-    await reading.save();
-    res.json(reading);
+    res.json(updatedReading);
   } catch (err) {
     console.error('Gas status error:', err.message);
     res.status(500).json({ message: 'Error fetching gas status' });
   }
 });
 
-// ✅ GET last saved gas status (without new simulation)
+
+// ✅ POST /sensor & /consumption (ESP32 Endpoints)
+// These routes process data from the ESP32 and update the single DB document.
+const handleEsp32Update = async (req, res) => {
+    try {
+        const { userId, gasLevel, digitalValue } = req.body;
+        if (!userId || gasLevel === undefined) {
+          return res.status(400).json({ success: false, error: 'User ID and gas level are required' });
+        }
+        
+        const user = await User.findById(userId);
+        if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+        
+        // Determine the system status based on what the ESP32 has reported
+        const { leakageDetected, alertMessage, status } = determineGasStatus(gasLevel, digitalValue);
+        
+        const updatedRecord = await GasMonitor.findOneAndUpdate(
+          { customerId: user._id },
+          {
+            gmail: user.email,
+            gasLevel: gasLevel,
+            leakageDetected: leakageDetected,
+            alertMessage: alertMessage,
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
+        );
+        
+        console.log(`[ESP32 Update] User: ${user.email}, Level: ${gasLevel}%, Status: ${status}`);
+        res.json({ success: true, message: "Data updated successfully", reading: updatedRecord });
+        
+      } catch (err) {
+        console.error('❌ Error processing ESP32 update:', err);
+        res.status(500).json({ success: false, error: err.message });
+      }
+};
+
+router.post('/sensor', handleEsp32Update);
+router.post('/consumption', handleEsp32Update);
+
+
+// ✅ POST /refill (Manual Override)
+// Resets the gas level to 100% and clears any leak status.
+router.post('/refill', async (req, res) => {
+  try {
+    const { userId, gasLevel } = req.body;
+    if (!userId) return res.status(400).json({ success: false, error: 'User ID is required' });
+    
+    const user = await User.findById(userId);
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    
+    const level = gasLevel || 100;
+    
+    const updatedRecord = await GasMonitor.findOneAndUpdate(
+      { customerId: userId },
+      {
+        gmail: user.email,
+        gasLevel: level,
+        leakageDetected: false, // Explicitly reset leak status on refill
+        alertMessage: `Gas Refilled to ${level}%`
+      },
+      { upsert: true, new: true, setDefaultsOnInsert: true }
+    );
+    
+    console.log(`[Refill] User ${user.email} refilled to ${level}%`);
+    res.json({ success: true, reading: updatedRecord });
+    
+  } catch (err) {
+    console.error('❌ Error on refill:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
+
+// --- READ-ONLY ENDPOINTS ---
+
+// ✅ GET last saved gas status (no simulation)
 router.get('/latest', async (req, res) => {
   try {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ message: 'Not authenticated' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const latestStatus = await GasMonitor.findOne({ customerId: decoded.id });
 
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    const latestStatus = await GasMonitor.findOne({ customerId: user._id })
-      .sort({ createdAt: -1 });
-
-    if (!latestStatus) {
-      return res.status(404).json({ message: 'No gas status found' });
-    }
+    if (!latestStatus) return res.status(404).json({ message: 'No gas status found for this user' });
 
     res.json(latestStatus);
   } catch (err) {
-    console.error('GET latest gas status error:', err.message);
     res.status(500).json({ message: 'Error fetching latest gas status' });
   }
 });
 
-// ✅ GET last 7 gas readings (logged-in user)
+// ✅ GET gas history (returns an array with only the single, current document)
 router.get('/history', async (req, res) => {
   try {
     const token = req.cookies.token;
     if (!token) return res.status(401).json({ message: 'Not authenticated' });
-
+    
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
-
-    if (!user) return res.status(404).json({ message: 'User not found' });
-
-    const history = await GasMonitor.find({ customerId: user._id })
-      .sort({ createdAt: -1 })
-      .limit(7);
-
-    res.json(history.reverse()); // oldest first
+    const currentStatus = await GasMonitor.findOne({ customerId: decoded.id });
+    
+    // Return current status in an array to maintain API compatibility for frontends expecting a list
+    res.json(currentStatus ? [currentStatus] : []);
   } catch (err) {
     res.status(500).json({ message: 'Error fetching gas history' });
+  }
+});
+
+// ✅ GET user information and their current gas status by ID
+router.get('/user/:userId', async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId).select('-password');
+    if (!user) return res.status(404).json({ success: false, error: 'User not found' });
+    
+    const gasReading = await GasMonitor.findOne({ customerId: userId });
+    
+    res.json({
+      success: true,
+      user: {
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        role: user.role,
+        phone: user.phone || 'N/A'
+      },
+      gasStatus: gasReading ? {
+        gasLevel: gasReading.gasLevel,
+        leakDetected: gasReading.leakageDetected,
+        alert: gasReading.alertMessage,
+        lastUpdated: gasReading.updatedAt
+      } : {
+        gasLevel: 100, // Default if no record exists yet
+        leakDetected: false,
+        alert: 'No readings yet',
+        lastUpdated: null
+      }
+    });
+    
+  } catch (err) {
+    console.error('❌ Error getting user info:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ✅ GET a list of all users for ESP32 configuration purposes
+router.get('/users', async (req, res) => {
+  try {
+    const users = await User.find().select('_id fullName email').limit(20);
+    
+    res.json({
+      success: true,
+      users: users.map(user => ({
+        id: user._id,
+        name: user.fullName,
+        email: user.email,
+        esp32Config: `String userId = "${user._id}"; // User: ${user.fullName}`
+      }))
+    });
+    
+  } catch (err) {
+    console.error('❌ Error listing users:', err);
+    res.status(500).json({ success: false, error: err.message });
   }
 });
 

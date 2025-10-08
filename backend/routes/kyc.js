@@ -186,6 +186,7 @@ router.get('/status-and-action', async (req, res) => {
     }
     let redirectToPayment = false;
     let showRejectMessage = false;
+    // status will be "approved" if admin approved
     if (kyc.status === "approved") {
       redirectToPayment = true;
     } else if (kyc.status === "rejected") {

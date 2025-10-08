@@ -226,24 +226,7 @@ function Home() {
           Gas Safety
         </h1>
         <div style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}>
-          <Link
-            to="/"
-            style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}
-          >
-            Home
-          </Link>
-          <Link
-            to="/features"
-            style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}
-          >
-            Features
-          </Link>
-          <Link
-            to="/contact"
-            style={{ color: "#fff", textDecoration: "none", fontWeight: 500 }}
-          >
-            Contact
-          </Link>
+          
           <button
             onClick={() => navigate("/register")}
             style={{
