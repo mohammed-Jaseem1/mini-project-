@@ -1,0 +1,166 @@
+/* Page background - soft light mixed colors */
+body {
+  background: linear-gradient(135deg, #f9fafc, #f1f3f4, #e8f0fe);
+  font-family: "Google Sans", "Segoe UI", Roboto, sans-serif;
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+
+
+
+/* Outer box container */
+.payment-box {
+  background: linear-gradient(135deg, #ffffff, #f5f7fa, #e9f0f7);
+  border-radius: 25px;
+  padding: 50px;
+  width: 650px;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.15);
+  border: 1px solid #e0e0e0;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative floating GPay circles INSIDE box */
+.payment-box::before,
+.payment-box::after {
+  content: "";
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.15;
+  z-index: 0;
+}
+
+.payment-box::before {
+  width: 180px;
+  height: 180px;
+  background: #4285F4; /* Google Blue */
+  top: -60px;
+  left: -60px;
+}
+
+.payment-box::after {
+  width: 150px;
+  height: 150px;
+  background: #34A853; /* Google Green */
+  bottom: -50px;
+  right: -50px;
+}
+
+/* Card Container inside the box */
+.payment-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 20px;
+  padding: 40px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.08);
+  position: relative;
+  z-index: 1;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.payment-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 35px rgba(0, 0, 0, 0.12);
+}
+
+/* Title */
+.payment-card h2 {
+  font-size: 26px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  text-align: center;
+  color: #202124;
+}
+
+/* Input fields */
+.payment-card input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-top: 8px;
+  margin-bottom: 20px;
+  border: 1px solid #dadce0;
+  border-radius: 10px;
+  background: #fff;
+  color: #202124;
+  font-size: 16px;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.payment-card input:focus {
+  border-color: #4285F4;
+  box-shadow: 0 0 6px rgba(66, 133, 244, 0.3);
+}
+
+/* Labels */
+.payment-card label {
+  font-weight: 500;
+  color: #5f6368;
+  font-size: 14px;
+}
+
+/* Payment method buttons */
+.payment-card .method-btn {
+  padding: 10px 20px;
+  border-radius: 10px;
+  border: 1px solid #dadce0;
+  margin-right: 10px;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+  color: #202124;
+  transition: all 0.3s ease;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.05);
+}
+
+.payment-card .method-btn:hover {
+  background: #f1f3f4;
+  transform: translateY(-2px);
+}
+
+.payment-card .method-btn.active {
+  background: linear-gradient(135deg, #4285F4, #34A853, #FBBC05, #EA4335);
+  color: #fff;
+  border: none;
+  box-shadow: 0 4px 12px rgba(66, 133, 244, 0.3);
+}
+
+/* Payment Summary */
+.payment-summary {
+  margin-top: 20px;
+  padding: 15px;
+  background: #f8f9fa;
+  border-radius: 10px;
+  color: #202124;
+  border: 1px solid #e0e0e0;
+}
+
+.payment-summary p {
+  margin: 8px 0;
+  font-size: 15px;
+}
+
+/* Submit button */
+.payment-card button[type="submit"] {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  font-size: 16px;
+  font-weight: bold;
+  background: linear-gradient(135deg, #4285F4, #34A853);
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(66, 133, 244, 0.3);
+}
+
+.payment-card button[type="submit"]:hover {
+  background: linear-gradient(135deg, #EA4335, #FBBC05);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+}

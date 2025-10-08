@@ -1,0 +1,113 @@
+/* Styling for the Edit Profile container */
+.edit-profile-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2.5rem;
+  background-color: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+  font-family: 'Arial', sans-serif;
+}
+
+.edit-profile-container h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 2rem;
+  font-size: 2rem;
+  border-bottom: 2px solid #3498db;
+  padding-bottom: 0.5rem;
+}
+
+/* Styling for each section (fieldset) */
+.edit-profile-section {
+  border: 1px solid #bdc3c7;
+  padding: 1.5rem 2rem;
+  margin-bottom: 2rem;
+  border-radius: 8px;
+}
+
+.edit-profile-section legend {
+  font-weight: 600;
+  color: #34495e;
+  padding: 0 0.8rem;
+  font-size: 1.2rem;
+}
+
+/* General label and input styling */
+.edit-profile-container label {
+  display: block;
+  margin-bottom: 1.2rem;
+  color: #555;
+  font-weight: 500;
+}
+
+.edit-profile-container input[type="text"],
+.edit-profile-container input[type="email"],
+.edit-profile-container input[type="tel"],
+.edit-profile-container input[type="date"],
+.edit-profile-container select {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  box-sizing: border-box;
+  margin-top: 6px;
+  font-size: 1rem;
+  transition: border-color 0.3s;
+}
+
+.edit-profile-container input:focus,
+.edit-profile-container select:focus {
+  border-color: #3498db;
+  outline: none;
+}
+
+/* Row styling for side-by-side inputs */
+.edit-profile-row {
+  display: flex;
+  gap: 1.5rem;
+}
+
+.edit-profile-row > label {
+  flex: 1;
+}
+
+/* Styling for error messages */
+.edit-profile-container span[style*="color: red"] {
+  font-size: 0.85rem;
+  margin-top: 5px;
+  display: block;
+}
+
+/* Submit button styling */
+.edit-profile-submit {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.edit-profile-submit button {
+  background-color: #3498db;
+  color: white;
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1.1rem;
+  font-weight: 600;
+  transition: background-color 0.3s, transform 0.2s;
+}
+
+.edit-profile-submit button:hover {
+  background-color: #2980b9;
+  transform: translateY(-2px);
+}
+
+/* Success message styling */
+.edit-profile-container div[style*="color: #388e3c"] {
+  text-align: center;
+  font-size: 1.1rem;
+  padding: 1rem;
+  background-color: #e8f5e9;
+  border-radius: 8px;
+  border-left: 5px solid #4caf50;
+}

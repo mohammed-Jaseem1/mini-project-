@@ -1,0 +1,141 @@
+/* KYCForm.css */
+
+.kyc-form-container {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 2rem;
+  background: linear-gradient(135deg, #f0f9ff, #c9e4ff, #e3d7ff);
+  box-shadow: 0 6px 25px rgba(0, 0, 0, 0.15);
+  border-radius: 15px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  border: 1px solid #d0d0d0;
+}
+
+
+h2 {
+  text-align: center;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+}
+
+.required-note,
+.info-text,
+.blue-link {
+  font-size: 0.95rem;
+  margin-bottom: 0.5rem;
+  text-align: center;
+}
+
+.blue-link {
+  color: #0077cc;
+  text-decoration: underline;
+  margin-top: 0.5rem;
+}
+
+.kyc-form-section {
+  border: 1px solid #e0e0e0;
+  padding: 1.5rem;
+  margin-top: 1.5rem;
+  border-radius: 8px;
+  background-color: #f9f9f9;
+}
+
+legend {
+  font-weight: bold;
+  padding: 0 10px;
+  color: #444;
+}
+
+label {
+  display: block;
+  margin-bottom: 1rem;
+  font-weight: 500;
+}
+
+input[type="text"],
+input[type="date"],
+input[type="tel"],
+input[type="email"],
+select {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+  transition: border-color 0.2s;
+}
+
+input:focus,
+select:focus {
+  border-color: #0077cc;
+  outline: none;
+  box-shadow: 0 0 3px rgba(0, 119, 204, 0.2);
+}
+
+.kyc-form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.kyc-form-row label {
+  flex: 1 1 30%;
+  min-width: 200px;
+}
+
+small {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+span {
+  display: inline-block;
+  margin: 0.5rem 0;
+  font-size: 0.9rem;
+  font-style: italic;
+  color: #888;
+}
+
+.kyc-form-submit {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.kyc-form-submit button {
+  background-color: #0077cc;
+  color: white;
+  padding: 0.8rem 2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.kyc-form-submit button:hover {
+  background-color: #005fa3;
+}
+
+p[style*="color: red"] {
+  color: #e74c3c !important;
+  font-weight: 500;
+  text-align: center;
+  margin-top: 1rem;
+}
+
+@media screen and (max-width: 768px) {
+  .kyc-form-row {
+    flex-direction: column;
+  }
+
+  .kyc-form-row label {
+    flex: 1 1 100%;
+  }
+
+  .kyc-form-container {
+    padding: 1rem;
+  }
+}

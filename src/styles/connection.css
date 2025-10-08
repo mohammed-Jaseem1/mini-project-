@@ -1,0 +1,209 @@
+/* ../styles/connection.css */
+
+.connection-container {
+  max-width: 800px;
+  margin: 60px auto 0;
+  padding: 24px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.connection-floating-bg {
+  min-height: 100vh;
+  width: 100vw;
+  position: fixed;
+  top: 0; left: 0;
+  z-index: 100;
+  background: linear-gradient(135deg, #e0eafc 0%, #f7f7fa 60%, #e3f9ff 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow-y: auto;
+}
+
+.connection-floating-box {
+  background: linear-gradient(120deg, #f8fafc 60%, #e3eafc 100%);
+  border-radius: 22px;
+  box-shadow: 0 12px 48px rgba(33, 150, 243, 0.13), 0 1.5px 8px rgba(76,175,80,0.08);
+  padding: 48px 36px 36px 36px;
+  max-width: 900px;
+  width: 95vw;
+  margin: 40px 0;
+  animation: floatInConn 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+@keyframes floatInConn {
+  from { opacity: 0; transform: translateY(40px) scale(0.98);}
+  to { opacity: 1; transform: translateY(0) scale(1);}
+}
+
+.connection-header {
+  margin-bottom: 32px;
+  font-size: 2.2rem;
+  color: #1976d2;
+  font-weight: 700;
+  letter-spacing: 1.2px;
+  text-align: center;
+}
+
+.requests-table {
+  width: 100%;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-collapse: collapse;
+  overflow: hidden; /* Ensures the border-radius is applied to the table corners */
+}
+
+.requests-table thead tr {
+  background: #f7f9fc;
+}
+
+.requests-table th,
+.requests-table td {
+  padding: 16px;
+  text-align: left;
+  border-bottom: 1px solid #e3eafc;
+}
+
+.requests-table th {
+  font-weight: 600;
+  color: #555;
+  text-transform: uppercase;
+  font-size: 12px;
+}
+
+.requests-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.status {
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: inline-block;
+  font-size: 14px;
+}
+
+.status-pending {
+  color: #888;
+}
+
+.status-approved {
+  color: #388e3c;
+  background-color: #e8f5e9;
+}
+
+.status-rejected {
+  color: #d32f2f;
+  background-color: #ffebee;
+}
+
+.action-buttons .btn {
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.action-buttons .btn:hover {
+  transform: translateY(-2px);
+}
+
+.btn-approve {
+  background: #43a047;
+  margin-right: 8px;
+}
+
+.btn-approve:hover {
+  background: #388e3c;
+}
+
+.btn-reject {
+  background: #d32f2f;
+}
+
+.btn-reject:hover {
+  background: #c62828;
+}
+
+.no-action {
+  color: #888;
+  font-style: italic;
+}
+
+.connection-floating-box.dark {
+  background: linear-gradient(120deg, #232f3e 60%, #2d3a4a 100%);
+  color: #fff;
+  border-radius: 22px;
+  box-shadow: 0 12px 48px rgba(33, 150, 243, 0.18), 0 1.5px 8px rgba(76,175,80,0.12);
+  padding: 48px 36px 36px 36px;
+  max-width: 900px;
+  width: 95vw;
+  margin: 40px 0;
+  animation: floatInConn 0.5s cubic-bezier(.4,0,.2,1);
+}
+
+.connection-floating-box.dark .connection-header {
+  color: #90caf9;
+}
+
+.connection-floating-box.dark .requests-table {
+  background: #232f3e;
+  color: #fff;
+}
+
+.connection-floating-box.dark .requests-table th {
+  background: #2d3a4a;
+  color: #90caf9;
+}
+
+.connection-floating-box.dark .requests-table td {
+  color: #fff;
+  border-bottom: 1px solid #374151;
+}
+
+.connection-floating-box.dark .requests-table tr:nth-child(even) {
+  background: #263043;
+}
+
+.connection-floating-box.dark .requests-table tr:hover {
+  background: #1e2533;
+}
+
+.connection-floating-box.dark .status-pending {
+  color: #ffe082;
+  background: #3a4256;
+}
+
+.connection-floating-box.dark .status-approved {
+  color: #43e97b;
+  background: #233d2e;
+}
+
+.connection-floating-box.dark .status-rejected {
+  color: #ff8a80;
+  background: #3a2323;
+}
+
+.connection-floating-box.dark .btn-approve {
+  background: #43a047;
+}
+
+.connection-floating-box.dark .btn-approve:hover {
+  background: #388e3c;
+}
+
+.connection-floating-box.dark .btn-reject {
+  background: #d32f2f;
+}
+
+.connection-floating-box.dark .btn-reject:hover {
+  background: #b71c1c;
+}
+
+.connection-floating-box.dark .no-action {
+  color: #b0bec5;
+}

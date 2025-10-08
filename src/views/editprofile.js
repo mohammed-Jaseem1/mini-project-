@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import '../styles/KYCForm.css';
+import '../styles/editprofile.css'; // Import the new CSS file
 
-function KYCForm() {
+function EditProfile() {
   const [formData, setFormData] = useState({
     salutation: '',
     firstName: '',
@@ -26,75 +26,65 @@ function KYCForm() {
   });
 
   const [success, setSuccess] = useState(false);
-  const [rejected, setRejected] = useState(false); // <-- new state for rejection
   const [dobError, setDobError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [mobileError, setMobileError] = useState('');
   const navigate = useNavigate();
   const salutations = ['Mr.', 'Mrs.'];
 
-  useEffect(() => {
-    async function fetchUserDetails() {
-      try {
-        const res = await fetch('http://localhost:5000/api/user/me', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-        if (!res.ok) {
-          console.error('User details fetch failed:', res.status, res.statusText);
-          return;
-        }
-        const data = await res.json();
-        setFormData((prev) => ({
-          ...prev,
-          mobileNumber: (data?.phone || data?.mobileNumber || '').toString(),
-          email: (data?.email || '').toLowerCase(),
-        }));
-      } catch (err) {
-        console.error('Failed to fetch user details:', err.message);
-      }
-    }
-    fetchUserDetails();
-  }, []);
-
-  useEffect(() => {
-    async function checkKYCStatusAndAction() {
-      let userEmail = "";
+    useEffect(() => {
+    async function fetchProfile() {
+      console.log("1. Starting to fetch profile data...");
       try {
         const userRes = await fetch('http://localhost:5000/api/user/me', {
           method: 'GET',
           credentials: 'include',
           headers: { 'Content-Type': 'application/json' },
         });
+
+        console.log("2. Fetched /api/user/me. Status:", userRes.status);
+
         if (userRes.ok) {
           const userData = await userRes.json();
-          userEmail = userData.email;
-        }
-      } catch {}
-      if (!userEmail) return;
-      try {
-        const res = await fetch(`http://localhost:5000/api/kyc/status-and-action?email=${encodeURIComponent(userEmail)}`,
-          {
-            method: 'GET',
-            credentials: 'include',
-            headers: { 'Content-Type': 'application/json' },
-          });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.redirectToPayment) {
-            navigate('/payment');
-          } else if (data.showRejectMessage) {
-            setRejected(true);
+          console.log("3. User data received:", userData);
+          const userEmail = userData.email;
+
+          if (userEmail) {
+            console.log("4. Fetching KYC data for:", userEmail);
+            const kycRes = await fetch(`http://localhost:5000/api/kyc/user/me?email=${encodeURIComponent(userEmail)}`);
+            console.log("5. Fetched /api/kyc/user/me. Status:", kycRes.status);
+
+            if (kycRes.ok) {
+              const kycData = await kycRes.json();
+              console.log("6. KYC data received:", kycData);
+
+              // *** SAFER CODE HERE ***
+              if (kycData) { // Check if kycData is not null
+                if (kycData.dob) {
+                  kycData.dob = new Date(kycData.dob).toISOString().split('T')[0];
+                }
+                setFormData(kycData);
+                console.log("7. Form state has been set.");
+              } else {
+                 console.error("KYC Data is null or undefined. This user may not have submitted a new connection form.");
+                 alert("Could not find a profile for this user. Please complete the 'New Connection' form first.");
+                 navigate('/kyc'); // Redirect to the form
+              }
+            } else if (kycRes.status === 404) {
+                console.error("KYC data not found for this user on the server.");
+                alert("Could not find your profile details. Please complete the 'New Connection' form first.");
+                navigate('/kyc'); // Redirect to the form
+            }
           }
+        } else {
+            console.error("Could not verify user. Are you logged in?");
+            navigate('/login'); // Redirect to login if not authenticated
         }
       } catch (err) {
-        // Optionally handle error
+        console.error("A critical error occurred during fetchProfile:", err);
       }
     }
-    checkKYCStatusAndAction();
+    fetchProfile();
   }, [navigate]);
 
   const handleChange = (e) => {
@@ -118,139 +108,44 @@ function KYCForm() {
     }
   };
 
-  const isValidKeralaPinCode = (pin) => /^\d{6}$/.test(pin);
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Reset error states
-    setDobError('');
-    setEmailError('');
-    setMobileError('');
-
-    // Validate DOB
+    // Validate DOB: must be at least 18 years old
+    setDobError("");
     if (!formData.dob) {
       setDobError('Date of Birth is required.');
       return;
     }
-
     const today = new Date();
     const birthDate = new Date(formData.dob);
     birthDate.setHours(0, 0, 0, 0);
     today.setHours(0, 0, 0, 0);
-
-    if (birthDate > today) {
-      setDobError('Date of Birth cannot be in the future.');
-      return;
-    }
-
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
       age--;
     }
-
     if (age < 18) {
       setDobError('You must be at least 18 years old.');
       return;
     }
 
-    // Required fields
-    const requiredFields = ['houseName', 'landmark', 'state', 'district', 'pinCode', 'mobileNumber', 'email'];
-    for (const field of requiredFields) {
-      if (!formData[field]) {
-        alert('Please fill all required fields.');
-        return;
-      }
-    }
-
-    if (!isValidKeralaPinCode(formData.pinCode)) {
-      alert('Please enter a valid 6-digit Pin Code.');
-      return;
-    }
-
-    if (!formData.fatherName && !formData.motherName) {
-      alert("Please fill either Father's Name or Mother's Name.");
-      return;
-    }
-
-    // ✅ Check for duplicate email/mobileNumber
     try {
-      const checkRes = await fetch('http://localhost:5000/api/kyc/check-duplicate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: formData.email,
-          mobileNumber: formData.mobileNumber
-        }),
-      });
-
-      if (!checkRes.ok) {
-        const errors = await checkRes.json();
-        if (errors.email) setEmailError(errors.email);
-        if (errors.mobileNumber) setMobileError(errors.mobileNumber);
-        // Remove popup, just return to show field errors
-        return;
-      }
-    } catch (err) {
-      setEmailError('❌ the gmail is already exist');
-      setMobileError('❌ the mobile number is already exist');
-      return;
-    }
-
-    // ✅ Final verification against backend user (email/phone must match logged-in user)
-    let backendUser = null;
-    try {
-      const res = await fetch('http://localhost:5000/api/user/me', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      if (res.ok) {
-        backendUser = await res.json();
-      } else {
-        setEmailError('Unable to verify user details. Please login again.');
-        setMobileError('Unable to verify user details. Please login again.');
-        return;
-      }
-    } catch (err) {
-      setEmailError('Unable to verify user details. Please try again.');
-      setMobileError('Unable to verify user details. Please try again.');
-      return;
-    }
-
-    const enteredEmail = formData.email.trim().toLowerCase();
-    const backendEmail = (backendUser.email || '').trim().toLowerCase();
-    const enteredMobile = formData.mobileNumber.replace(/\D/g, '').slice(-10);
-    const backendMobile = (backendUser.phone || backendUser.mobileNumber || '').replace(/\D/g, '').slice(-10);
-
-    if (enteredEmail !== backendEmail) {
-      setEmailError('The email must match your registered/login email.');
-      return;
-    }
-
-    if (enteredMobile !== backendMobile) {
-      setMobileError('The mobile number must match your registered phone number.');
-      return;
-    }
-
-    // ✅ Submit KYC
-    try {
-      const res = await fetch('http://localhost:5000/api/kyc', {
-        method: 'POST',
+      const res = await fetch('http://localhost:5000/api/kyc/user/update', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData),
       });
 
       if (res.ok) {
         setSuccess(true);
-        // Do NOT redirect to payment page here
-        // Show waiting for admin approval message
+        setTimeout(() => {
+          navigate('/profileupdated', { state: { updatedProfile: formData } }); // Pass updated profile
+        }, 2000);
       } else {
         const err = await res.json();
-        alert(err.message || 'Submission failed');
+        alert(err.message || 'Update failed');
       }
     } catch (error) {
       console.error(error);
@@ -258,24 +153,12 @@ function KYCForm() {
     }
   };
 
-  if (rejected) {
-    return (
-      <div className="kyc-form-container">
-        <h2>Know Your Customer (KYC) Form</h2>
-        <div style={{ marginTop: '1.5rem', color: 'red', fontWeight: 600 }}>
-          Sorry, your request has been rejected by the admin.
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <form className="kyc-form-container" onSubmit={handleSubmit}>
-      <h2>Know Your Customer (KYC) Form</h2>
-      <p className="blue-link">Request For New Connection</p>
-
-      {/* Personal Details */}
-      <fieldset className="kyc-form-section">
+    // Use the new class names from EditProfile.css
+    <form className="edit-profile-container" onSubmit={handleSubmit}>
+      <h2>Edit Profile</h2>
+      <fieldset className="edit-profile-section">
         <legend>1) Personal Details</legend>
         <label>
           Salutation:
@@ -285,7 +168,7 @@ function KYCForm() {
           </select>
         </label>
 
-        <div className="kyc-form-row">
+        <div className="edit-profile-row">
           <label>
             First Name:
             <input type="text" name="firstName" value={formData.firstName} onChange={handleChange} />
@@ -326,10 +209,10 @@ function KYCForm() {
       </fieldset>
 
       {/* Address Section */}
-      <fieldset className="kyc-form-section">
+      <fieldset className="edit-profile-section">
         <legend>2) Address for LPG connection / Contact Information</legend>
         <label>
-          House / Flat #, Name <span style={{color:"red"}}>*</span>:
+          House / Flat #, Name*:
           <input type="text" name="houseName" value={formData.houseName} onChange={handleChange} required />
         </label>
         <label>
@@ -345,7 +228,7 @@ function KYCForm() {
           <input type="text" name="streetName" value={formData.streetName} onChange={handleChange} />
         </label>
         <label>
-          Landmark <span style={{color:"red"}}>*</span>:
+          Landmark*:
           <input type="text" name="landmark" value={formData.landmark} onChange={handleChange} required />
         </label>
         <label>
@@ -353,15 +236,15 @@ function KYCForm() {
           <input type="text" name="city" value={formData.city} onChange={handleChange} />
         </label>
         <label>
-          State <span style={{color:"red"}}>*</span>:
+          State*:
           <input type="text" name="state" value={formData.state} onChange={handleChange} required />
         </label>
         <label>
-          District <span style={{color:"red"}}>*</span>:
+          District*:
           <input type="text" name="district" value={formData.district} onChange={handleChange} required />
         </label>
         <label>
-          Pin Code <span style={{color:"red"}}>*</span>:
+          Pin Code:
           <input
             type="text"
             name="pinCode"
@@ -372,7 +255,7 @@ function KYCForm() {
           />
         </label>
         <label>
-          Mobile Number <span style={{color:"red"}}>*</span>:
+          Mobile Number*:
           <input
             type="tel"
             name="mobileNumber"
@@ -386,31 +269,30 @@ function KYCForm() {
           {mobileError && <span style={{ color: 'red' }}>{mobileError}</span>}
         </label>
         <label>
-          Email ID <span style={{color:"red"}}>*</span>:
+          Email ID*:
           <input
             type="email"
             name="email"
             value={formData.email}
             onChange={handleChange}
             required
-            title="Enter a valid email address"
+            readOnly // Keep email as read-only
+            title="Email cannot be changed."
           />
           {emailError && <span style={{ color: 'red' }}>{emailError}</span>}
         </label>
       </fieldset>
 
-      <div className="kyc-form-submit">
-        <button type="submit">Submit</button>
+      <div className="edit-profile-submit">
+        <button type="submit">Update Profile</button>
       </div>
       {success && (
         <div style={{ marginTop: '1.5rem', color: '#388e3c', fontWeight: 600 }}>
-          Request submitted! Please wait for admin approval.<br />
-          You will be redirected to payment page after approval.
+          Profile updated successfully!
         </div>
       )}
     </form>
   );
 }
 
-export default KYCForm;
-// No changes needed for approval/rejection logic
+export default EditProfile;
