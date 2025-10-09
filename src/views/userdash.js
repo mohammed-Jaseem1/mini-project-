@@ -99,6 +99,7 @@ const GasMonitorDashboard = () => {
   const theme = useTheme(); // Access the theme palette
 
   const dropdownRef = useRef();
+  const alarmRef = useRef(null);
   const navigate = useNavigate();
 
   // Mock data for the graph (replace with real data from backend)
@@ -223,6 +224,35 @@ const GasMonitorDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
+  // Initialize a single Audio instance
+  useEffect(() => {
+    alarmRef.current = new Audio('/alarm.mp3');
+    if (alarmRef.current) {
+      alarmRef.current.loop = true;
+    }
+  }, []);
+
+  // Unlock audio on first user gesture (autoplay policy)
+  useEffect(() => {
+    const unlock = () => {
+      if (!alarmRef.current) return;
+      alarmRef.current.play()
+        .then(() => {
+          alarmRef.current.pause();
+          alarmRef.current.currentTime = 0;
+        })
+        .catch(() => { /* ignore; will try again later */ });
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+    window.addEventListener('click', unlock);
+    window.addEventListener('touchstart', unlock);
+    return () => {
+      window.removeEventListener('click', unlock);
+      window.removeEventListener('touchstart', unlock);
+    };
+  }, []);
+
   // Refill gas after successful payment
   useEffect(() => {
     const paymentDone = localStorage.getItem('gasRefilled');
@@ -232,16 +262,7 @@ const GasMonitorDashboard = () => {
     }
   }, [gasData]);
 
-  // ✅ Handle dropdown + sidebar
-  useEffect(() => {
-    function handleClickOutside(event) {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setDropdownOpen(false);
-      }
-    }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  // Note: MUI Menu handles outside clicks via onClose; no manual listeners needed here
 
   const handleProfileClick = () => setDropdownOpen((open) => !open);
   const handleLogout = () => {
@@ -249,33 +270,37 @@ const GasMonitorDashboard = () => {
     window.location.href = "/login";
   };
 
-  // Play alarm sound and show notification when gas leakage is detected
+  // Play/pause alarm and show notification when gas leakage changes
   useEffect(() => {
-    if (gasData && gasData.leakageDetected) {
-      // Play alarm sound
-      const alarm = new Audio('/alarm.mp3'); // Correct path for public folder
-      alarm.play().catch(e => console.error("Error playing sound:", e));
+    const isLeak = !!gasData?.leakageDetected;
+    if (!alarmRef.current) return;
+    if (isLeak) {
+      alarmRef.current.play().catch(e => console.error('Alarm play failed:', e));
 
-      // Show system notification
-      if (Notification.permission === "granted") {
-        new Notification("Gas Leakage Alert!", {
-          body: gasData.alertMessage || "Immediate action required: Gas leakage detected!",
-          icon: '/alert-icon.png', // Optional: place an alert icon in your public folder
-          vibrate: [200, 100, 200]
-        });
-      } else if (Notification.permission !== "denied") {
-        Notification.requestPermission().then(permission => {
-          if (permission === "granted") {
-            new Notification("Gas Leakage Alert!", {
-              body: gasData.alertMessage || "Immediate action required: Gas leakage detected!",
-              icon: '/alert-icon.png',
-              vibrate: [200, 100, 200]
-            });
-          }
-        });
+      if (typeof Notification !== 'undefined') {
+        if (Notification.permission === 'granted') {
+          new Notification('Gas Leakage Alert!', {
+            body: gasData?.alertMessage || 'Immediate action required: Gas leakage detected!',
+            icon: '/alert-icon.png',
+            vibrate: [200, 100, 200]
+          });
+        } else if (Notification.permission !== 'denied') {
+          Notification.requestPermission().then(permission => {
+            if (permission === 'granted') {
+              new Notification('Gas Leakage Alert!', {
+                body: gasData?.alertMessage || 'Immediate action required: Gas leakage detected!',
+                icon: '/alert-icon.png',
+                vibrate: [200, 100, 200]
+              });
+            }
+          });
+        }
       }
+    } else {
+      alarmRef.current.pause();
+      alarmRef.current.currentTime = 0;
     }
-  }, [gasData]);
+  }, [gasData?.leakageDetected, gasData?.alertMessage]);
 
   // Add this effect after other useEffects
   useEffect(() => {
@@ -351,7 +376,6 @@ const GasMonitorDashboard = () => {
           {/* Desktop Navigation */}
           <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
             <Button color="inherit" onClick={() => navigate("/userdash")} sx={{ color: '#e0e0e0' }}>Dashboard</Button>
-            <Button color="inherit" onClick={() => navigate("/reports")} sx={{ color: '#e0e0e0' }}>Reports</Button>
             <Button color="inherit" onClick={() => navigate("/payment")} sx={{ color: '#e0e0e0' }}>Payment</Button>
             <Button color="inherit" onClick={() => navigate("/feedback")} sx={{ color: '#e0e0e0' }}>Feedback</Button>
             <Button color="inherit" onClick={() => navigate("/history")} sx={{ color: '#e0e0e0' }}>History</Button>
@@ -462,7 +486,7 @@ const GasMonitorDashboard = () => {
                       Current Gas Level
                     </Typography>
                     <Typography variant="h3" sx={{ color: '#4CAF50', fontWeight: 'bold' }}> {/* Green for gas level */}
-                      {gasData.gasLevel || 15} ppm
+                      {gasData.gasLevel ?? 15} ppm
                     </Typography>
                   </CardContent>
                 </CardStyled>
@@ -549,7 +573,7 @@ const GasMonitorDashboard = () => {
             </Typography>
             <GasLevelChartCard sx={{ mb: 4, height: 300, position: 'relative' }}>
               <Box sx={{ position: 'absolute', top: theme.spacing(2), right: theme.spacing(2), color: '#e0e0e0', fontWeight: 'bold', fontSize: '1.5rem' }}>
-                {gasData.gasLevel || 15} ppm
+                {gasData.gasLevel ?? 15} ppm
               </Box>
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart
@@ -621,19 +645,6 @@ const GasMonitorDashboard = () => {
               Quick Actions
             </Typography>
             <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="contained"
-                sx={{
-                  backgroundColor: '#162447',
-                  color: '#e0e0e0',
-                  '&:hover': {
-                    backgroundColor: '#1f3a61',
-                  },
-                }}
-                onClick={() => navigate('/reports')}
-              >
-                View Reports
-              </Button>
               <Button
                 variant="contained"
                 sx={{

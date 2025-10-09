@@ -15,14 +15,11 @@ const autoBookingRoutes = require('./routes/autoBookingRoutes');
 const sensorRoutes = require("./routes/Sensors");
 const gasRoutes = require('./routes/gas');
 
-
-
 const User = require('./models/User');
 const Payment = require('./models/Payment');
 const GasMonitor = require('./models/GasMonitor');
-const Feedback = require('./models/Feedback'); // Add this line with other models
-const AutoBook1 = require('./models/AutoBooking'); // Change from './models/AutoBook1'
-
+const Feedback = require('./models/Feedback');
+const AutoBook1 = require('./models/AutoBooking');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -30,9 +27,8 @@ const PORT = process.env.PORT || 5000;
 // ✅ Middleware
 app.use(cors({
   origin: function (origin, callback) {
-    // Allow requests with no origin (like ESP32) or from localhost/IP
-    if (!origin || 
-        origin.includes('localhost') || 
+    if (!origin ||
+        origin.includes('localhost') ||
         origin.includes('192.168.1.93') ||
         origin.includes('127.0.0.1')) {
       callback(null, true);
@@ -51,7 +47,7 @@ app.use(session({
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    maxAge: 24 * 60 * 60 * 1000
   }
 }));
 
@@ -68,8 +64,7 @@ app.use('/api/gas', gasRoutes);
 // ✅ POST: Save Payment
 app.post('/api/payment', async (req, res) => {
   try {
-    // Accept all payment fields from frontend
-    const {
+    let {
       customerId,
       amountPaid,
       paymentMethod,
@@ -82,55 +77,141 @@ app.post('/api/payment', async (req, res) => {
 
     console.log('📥 Payment received:', req.body);
 
+    // Validate required fields
+    if (!gmail || !amountPaid) {
+      return res.status(400).json({ message: 'Email and amount are required' });
+    }
+
+    // Ensure we have a user and customerId for Payment model
+    let userForPayment;
+    if (customerId) {
+      const isValidId = mongoose.Types.ObjectId.isValid(customerId);
+      if (isValidId) {
+        userForPayment = await User.findById(customerId);
+      } else {
+        // Fall back to email lookup if provided id is invalid
+        userForPayment = await User.findOne({ email: gmail });
+      }
+    } else {
+      userForPayment = await User.findOne({ email: gmail });
+    }
+    if (!userForPayment) {
+      return res.status(400).json({ message: 'User not found for provided email/customerId' });
+    }
+    customerId = userForPayment._id.toString();
+
+    // Default payment method if not provided (to avoid schema validation error)
+    const normalizedPaymentMethod = paymentMethod || 'Online';
+
     const payment = new Payment({
       customerId,
       amountPaid,
-      paymentMethod,
-      cardLast4Digits, // last 4 digits
-      expiry,          // MM/YY
-      cvv,             // 3 digits
-      billingAddress,  // { address, city, state, zip }
+      paymentMethod: normalizedPaymentMethod,
+      cardLast4Digits,
+      expiry,
+      cvv,
+      billingAddress,
       gmail,
     });
 
     await payment.save();
+    console.log('💳 Payment saved successfully:', payment._id);
 
-    // Refill gas after payment
-    const user = await User.findOne({ email: gmail });
+    // ✅ Refill gas after payment - Enhanced debugging
+    const user = userForPayment;
+    console.log('👤 User lookup result:', user ? `Found: ${user.email}` : 'Not found');
+    
     if (user) {
-      const reading = new GasMonitor({
-        customerId: user._id,
-        gmail: user.email,
-        gasLevel: 100,
-        leakageDetected: false,
-        alertMessage: '',
-      });
-      await reading.save();
-    }
-
-    // Update auto-booking status if exists
-    if (user) {
-      const pendingBooking = await AutoBook1.findOne({
-        userId: user._id,
-        refillStatus: "Pending"
-      });
-
-      if (pendingBooking) {
-        await AutoBook1.findByIdAndUpdate(
-          pendingBooking._id,
+      try {
+        // Update or create the user's gas record to reflect the refill
+        console.log('🔍 Updating gas record to reflect refill...');
+        const updatedRecord = await GasMonitor.findOneAndUpdate(
+          { customerId: user._id },
           {
-            refillStatus: "Completed",
-            paymentId: payment._id,
-            deliveryDate: new Date()
-          }
+            gmail: user.email,
+            gasLevel: 100,
+            leakageDetected: false,
+            alertMessage: '✅ Gas tank refilled successfully!',
+            source: 'refill'
+          },
+          { upsert: true, new: true, setDefaultsOnInsert: true }
         );
+        console.log('✅ Gas refill updated:', {
+          id: updatedRecord._id,
+          customerId: updatedRecord.customerId,
+          gasLevel: updatedRecord.gasLevel,
+          createdAt: updatedRecord.createdAt
+        });
+
+        // Update auto-booking status if exists
+        const pendingBooking = await AutoBook1.findOne({
+          userId: user._id,
+          refillStatus: "Pending"
+        });
+
+        console.log('📋 Pending booking check:', pendingBooking ? `Found: ${pendingBooking._id}` : 'None found');
+
+        if (pendingBooking) {
+          const updatedBooking = await AutoBook1.findByIdAndUpdate(
+            pendingBooking._id,
+            {
+              refillStatus: "Completed",
+              paymentId: payment._id,
+              deliveryDate: new Date()
+            },
+            { new: true }
+          );
+          console.log('✅ Auto-booking updated:', updatedBooking);
+        }
+
+        // Verify the refill was saved by checking latest reading
+        const latestReading = await GasMonitor.findOne({ customerId: user._id }).sort({ createdAt: -1 });
+        console.log('🔍 Latest gas reading after refill:', {
+          gasLevel: latestReading?.gasLevel,
+          createdAt: latestReading?.createdAt,
+          source: latestReading?.source
+        });
+
+      } catch (refillError) {
+        console.error('❌ Detailed refill error:', {
+          message: refillError.message,
+          stack: refillError.stack,
+          name: refillError.name
+        });
+        
+        // Check if it's a validation error
+        if (refillError.name === 'ValidationError') {
+          console.error('📋 Validation errors:', refillError.errors);
+        }
+        
+        // Continue even if refill fails - payment is still successful
       }
+    } else {
+      console.log('⚠️ User not found for email:', gmail);
+      console.log('🔍 Checking all users with similar emails...');
+      const similarUsers = await User.find({ 
+        email: { $regex: gmail.split('@')[0], $options: 'i' } 
+      }).select('email');
+      console.log('📧 Similar emails found:', similarUsers.map(u => u.email));
     }
 
-    res.status(201).json({ message: 'Payment saved successfully' });
+    res.status(201).json({ 
+      message: 'Payment saved successfully',
+      paymentId: payment._id 
+    });
   } catch (err) {
-    console.error('❌ Payment save error:', err);
-    res.status(500).json({ message: 'Server error while saving payment' });
+    console.error('❌ Payment save error:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    });
+    if (err.name === 'ValidationError') {
+      return res.status(400).json({ message: 'Validation failed', details: err.errors });
+    }
+    res.status(500).json({ 
+      message: 'Server error while saving payment',
+      error: process.env.NODE_ENV === 'development' ? err.message : undefined
+    });
   }
 });
 
@@ -144,19 +225,19 @@ app.get('/api/payment', async (req, res) => {
   }
 });
 
-// Move this route before other payment routes
+// ✅ GET: User Payment History
 app.get('/api/payment/user-history/:email', async (req, res) => {
   try {
     const userEmail = req.params.email;
-    console.log('Fetching payments for:', userEmail); // Debug log
+    console.log('Fetching payments for:', userEmail);
     
     const payments = await Payment.find({ gmail: userEmail })
       .sort({ date: -1 });
     
-    console.log('Found payments:', payments); // Debug log
+    console.log('Found payments:', payments);
     
     if (!payments || payments.length === 0) {
-      return res.json([]); // Return empty array instead of 404
+      return res.json([]);
     }
     
     res.json(payments);
@@ -184,107 +265,87 @@ app.get('/api/user/me', async (req, res) => {
   }
 });
 
-// ✅ API: Gas Status (simulation per logged-in user)
+// ✅ API: Gas Status (ONLY from real sensors - no simulation)
 app.get('/api/gas/status', async (req, res) => {
   try {
-    // ✅ Get logged-in user
     const token = req.cookies.token;
-    if (!token) {
-      return res.status(401).json({ message: 'Not authenticated' });
-    }
+    if (!token) return res.status(401).json({ message: 'Not authenticated' });
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
     const user = await User.findById(decoded.id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    // ✅ Check last entry
-    let lastEntry = await GasMonitor.findOne({ customerId: user._id }).sort({ createdAt: -1 });
-    let gasLevel = 100;
-
-    if (lastEntry) {
-      const now = new Date();
-      const diffMs = now - lastEntry.createdAt;
-      const diffSec = diffMs / 1000;
-
-      if (diffSec < 5) {
-        // Return latest entry without creating new one
-        return res.json(lastEntry);
-      }
-
-      // Decrease by 1 per call
-      gasLevel = Math.max(0, lastEntry.gasLevel - 1);
-    }
-
-    // ✅ Leakage only if gasLevel is between 50 and 45
-    const leakageDetected = (gasLevel <= 50 && gasLevel >= 45);
-
-    // ✅ Alert messages
-    let alertMessage = '';
-    if (gasLevel < 20 && leakageDetected) {
-      alertMessage = '⚠️ Low Gas Level! Please Refill Soon.\n🚨 Gas Leakage Detected! Take Immediate Action!';
-    } else if (gasLevel < 20) {
-      alertMessage = '⚠️ Low Gas Level! Please Refill Soon.';
-    } else if (leakageDetected) {
-      alertMessage = '🚨 Gas Leakage Detected! Take Immediate Action!';
-    }
-
-    // ✅ Save new entry
-    const reading = new GasMonitor({
-      customerId: user._id,
-      gmail: user.email,
-      gasLevel,
-      leakageDetected,
-      alertMessage,
-    });
-
-    await reading.save();
-
-    // Add auto-booking creation when gas level is low
-    if (gasLevel <= 20) {
-      // Check for existing pending booking
-      const existingBooking = await AutoBook1.findOne({
-        userId: user._id,
-        refillStatus: "Pending"
+    // Get the most recent reading (including refills)
+    const lastEntry = await GasMonitor.findOne({ 
+      customerId: user._id
+    }).sort({ createdAt: -1 });
+    
+    if (!lastEntry) {
+      return res.json({
+        message: 'No sensor readings available. Please start your Wokwi simulation.',
+        gasLevel: null,
+        leakageDetected: false,
+        alertMessage: 'Waiting for sensor data...'
       });
+    }
 
-      if (!existingBooking) {
-        const autoBooking = new AutoBook1({
+    // ✅ Check if auto-booking is needed when gas is low
+    if (lastEntry.gasLevel <= 20) {
+      try {
+        // Check if there's already a pending booking
+        const existingBooking = await AutoBook1.findOne({
           userId: user._id,
-          gasLevel,
-          address: {
-            street: user.address || '',
-            city: user.city || '',
-            state: user.state || '',
-            pincode: user.pincode || ''
-          },
-          customerPhone: user.phone,
-          totalAmount: 900, // Default amount
-          quantity: 1
+          refillStatus: "Pending"
         });
-        await autoBooking.save();
+
+        if (!existingBooking) {
+          // Create auto-booking
+          const autoBooking = new AutoBook1({
+            userId: user._id,
+            gmail: user.email,
+            gasLevel: lastEntry.gasLevel,
+            address: {
+              street: user.address || 'Not provided',
+              city: user.city || 'Not provided',
+              state: user.state || 'Not provided',
+              pincode: user.pincode || '000000'
+            },
+            customerPhone: user.phone || 'Not provided',
+            totalAmount: 900,
+            quantity: 1,
+            refillStatus: "Pending"
+          });
+          await autoBooking.save();
+          console.log(`🔔 Auto-booking created for ${user.email} at gas level ${lastEntry.gasLevel}%`);
+        }
+      } catch (bookingError) {
+        console.error('❌ Auto-booking creation error:', bookingError);
+        // Don't fail the entire request if auto-booking fails
       }
     }
 
-    res.json(reading);
-
+    res.json(lastEntry);
   } catch (err) {
-    console.error('Gas Simulation Error:', err);
-    res.status(500).json({ message: 'Server error in gas simulator' });
+    console.error('Gas Status Error:', err);
+    res.status(500).json({ message: 'Server error in gas status' });
   }
 });
 
-// Get auto-booking history for user
+// ✅ Block any automatic simulation endpoints
+app.post('/api/gas/simulate', (req, res) => {
+  res.status(405).json({ message: 'Gas simulation is disabled. Use Wokwi instead.' });
+});
+
+app.put('/api/gas/simulate', (req, res) => {
+  res.status(405).json({ message: 'Gas simulation is disabled. Use Wokwi instead.' });
+});
+
+// ✅ Auto-booking History
 app.get('/api/gas/booking-history/:email', async (req, res) => {
   try {
     const userEmail = req.params.email;
-    const bookings = await AutoBook1.find({ 
-      gmail: userEmail // Update to match the field in AutoBook1 schema
-    })
-    .sort({ createdAt: -1 });
+    const bookings = await AutoBook1.find({ gmail: userEmail }).sort({ createdAt: -1 });
     
-    // Transform the data to match the expected format
     const formattedBookings = bookings.map(booking => ({
       createdAt: booking.createdAt,
       type: 'Auto Booking',
@@ -299,24 +360,19 @@ app.get('/api/gas/booking-history/:email', async (req, res) => {
   }
 });
 
-// Update the auto-bookings route
+// ✅ Get auto-bookings for user
 app.get('/api/gas/auto-bookings/:email', async (req, res) => {
   try {
     const userEmail = req.params.email;
     const user = await User.findOne({ email: userEmail });
     
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ error: 'User not found' });
 
-    const bookings = await AutoBook1.find({ 
-      userId: user._id,
-      gasLevel: { $lte: 20 }
-    }).sort({ createdAt: -1 });
+    const bookings = await AutoBook1.find({ userId: user._id }).sort({ createdAt: -1 });
     
     const formattedBookings = bookings.map(booking => ({
       _id: booking._id,
-      email: userEmail,  // Add email to response
+      email: userEmail,
       gasLevel: booking.gasLevel,
       bookingDate: booking.createdAt,
       refillStatus: booking.refillStatus || 'Pending',
@@ -330,12 +386,12 @@ app.get('/api/gas/auto-bookings/:email', async (req, res) => {
   }
 });
 
-// Get all gas readings for admin
+// ✅ Admin: Get All Gas Readings
 app.get('/api/gas/all-readings', async (req, res) => {
   try {
     const readings = await GasMonitor.find()
       .sort({ createdAt: -1 })
-      .limit(100); // Limit to last 100 readings
+      .limit(100);
     res.json(readings);
   } catch (err) {
     console.error('Error fetching gas readings:', err);
@@ -343,7 +399,7 @@ app.get('/api/gas/all-readings', async (req, res) => {
   }
 });
 
-// Admin middleware to check if user is admin
+// ✅ Admin Middleware
 const isAdmin = async (req, res, next) => {
   try {
     const token = req.cookies.token;
@@ -361,7 +417,7 @@ const isAdmin = async (req, res, next) => {
   }
 };
 
-// Updated admin users endpoint with auth
+// ✅ Admin: Get All Users
 app.get('/api/admin/users', isAdmin, async (req, res) => {
   try {
     const users = await User.find()
@@ -385,7 +441,7 @@ app.get('/api/admin/users', isAdmin, async (req, res) => {
   }
 });
 
-// Add admin reports endpoints
+// ✅ Admin: Reports
 app.get('/api/admin/reports', async (req, res) => {
   try {
     const [users, payments, gasReadings] = await Promise.all([
@@ -440,4 +496,3 @@ mongoose.connect(process.env.MONGO_URI, {
     console.error('➡️ Make sure your current IP address is whitelisted in MongoDB Atlas: https://www.mongodb.com/docs/atlas/security-whitelist/');
     console.error('➡️ Also check your MONGO_URI in .env and network connectivity.');
   });
-

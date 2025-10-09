@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Add this import
 import {
   Box,
   AppBar,
@@ -15,8 +16,10 @@ import {
   TableRow,
   CircularProgress,
   Alert,
+  Button, // Add this import
   styled
 } from '@mui/material';
+import { ArrowBack } from '@mui/icons-material'; // Add this import
 import axios from 'axios';
 
 const StyledTableCell = styled(TableCell)({
@@ -34,6 +37,7 @@ const Main = styled('main')(({ theme }) => ({
 }));
 
 const Reports = () => {
+  const navigate = useNavigate(); // Add this hook
   const [activeTab, setActiveTab] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -53,7 +57,7 @@ const Reports = () => {
           axios.get('http://localhost:5000/api/payment', { 
             withCredentials: true 
           }),
-          axios.get('http://localhost:5000/api/gas/status', { 
+          axios.get('http://localhost:5000/api/gas/all-readings', { // Changed endpoint
             withCredentials: true 
           })
         ]);
@@ -61,7 +65,7 @@ const Reports = () => {
         setReports({
           users: usersRes.data || [],
           payments: paymentsRes.data || [],
-          gasUsage: Array.isArray(gasRes.data) ? gasRes.data : [gasRes.data]
+          gasUsage: gasRes.data || [] // Now gets all users' gas readings
         });
       } catch (err) {
         console.error('Error:', err);
@@ -85,6 +89,20 @@ const Reports = () => {
     <Box sx={{ display: 'flex' }}>
       <AppBar position="fixed" sx={{ backgroundColor: '#0a192f' }}>
         <Toolbar>
+          <Button
+            onClick={() => navigate(-1)}
+            sx={{ 
+              color: '#e0e0e0', 
+              mr: 2,
+              minWidth: 'auto',
+              padding: '8px',
+              '&:hover': {
+                backgroundColor: 'rgba(224, 224, 224, 0.1)'
+              }
+            }}
+          >
+            <ArrowBack />
+          </Button>
           <Typography variant="h6">Admin Reports</Typography>
         </Toolbar>
       </AppBar>
@@ -162,16 +180,16 @@ const Reports = () => {
               <TableHead>
                 <TableRow>
                   <StyledTableCell>User</StyledTableCell>
-                  <StyledTableCell>Gas Level</StyledTableCell>
+                  <StyledTableCell>Gas Level (ppm)</StyledTableCell>
                   <StyledTableCell>Date</StyledTableCell>
                   <StyledTableCell>Status</StyledTableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
-                {reports.gasUsage.map(reading => (
-                  <TableRow key={reading._id}>
-                    <StyledTableCell>{reading.gmail}</StyledTableCell>
-                    <StyledTableCell>{reading.gasLevel}%</StyledTableCell>
+                {reports.gasUsage.map((reading, index) => (
+                  <TableRow key={reading._id || index}>
+                    <StyledTableCell>{reading.gmail || 'Unknown'}</StyledTableCell>
+                    <StyledTableCell>{reading.gasLevel} ppm</StyledTableCell>
                     <StyledTableCell>
                       {new Date(reading.createdAt).toLocaleDateString()}
                     </StyledTableCell>

@@ -157,7 +157,27 @@ function EditProfile() {
   return (
     // Use the new class names from EditProfile.css
     <form className="edit-profile-container" onSubmit={handleSubmit}>
-      <h2>Edit Profile</h2>
+      <div className="edit-profile-header">
+        <button 
+          type="button" 
+          className="back-button"
+          onClick={() => navigate(-1)}
+          style={{
+            background: '#f44336',
+            color: 'white',
+            border: 'none',
+            padding: '8px 16px',
+            borderRadius: '4px',
+            cursor: 'pointer',
+            marginBottom: '20px',
+            fontSize: '14px'
+          }}
+        >
+          ← Back
+        </button>
+        <h2>Edit Profile</h2>
+      </div>
+      
       <fieldset className="edit-profile-section">
         <legend>1) Personal Details</legend>
         <label>

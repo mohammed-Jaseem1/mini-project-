@@ -1,6 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const GasMonitor = require('../models/GasMonitor');
+const AutoBook1 = require('../models/AutoBooking');
 const User = require('../models/User');
 const router = express.Router();
 
@@ -57,28 +58,8 @@ router.get('/status', async (req, res) => {
         return res.json(currentEntry);
     }
 
-    const diffSec = (new Date() - currentEntry.updatedAt) / 1000;
-    if (diffSec < 5) {
-      return res.json(currentEntry); // Return fresh data without changes
-    }
-    
-    // Simulate consumption
-    const newGasLevel = Math.max(0, currentEntry.gasLevel - 1);
-    
-    // Determine status based on new level, but crucially, digitalValue is 0
-    // so it won't create a new leak, only reflect a low gas warning.
-    const { alertMessage } = determineGasStatus(newGasLevel, 0);
-
-    const updatedReading = await GasMonitor.findOneAndUpdate(
-      { customerId: user._id },
-      { 
-        gasLevel: newGasLevel,
-        alertMessage: alertMessage // Update alert if gas becomes low
-      },
-      { new: true }
-    );
-
-    res.json(updatedReading);
+    // Do NOT simulate consumption here; just return the latest stored reading
+    return res.json(currentEntry);
   } catch (err) {
     console.error('Gas status error:', err.message);
     res.status(500).json({ message: 'Error fetching gas status' });
@@ -113,6 +94,33 @@ const handleEsp32Update = async (req, res) => {
         );
         
         console.log(`[ESP32 Update] User: ${user.email}, Level: ${gasLevel}%, Status: ${status}`);
+
+        // ✅ Trigger auto-booking when gas level is low (device-driven)
+        if (gasLevel <= 20) {
+          try {
+            const existingPending = await AutoBook1.findOne({
+              userId: user._id,
+              refillStatus: 'Pending'
+            });
+
+            if (!existingPending) {
+              const autoBooking = new AutoBook1({
+                userId: user._id,
+                gasLevel: gasLevel,
+                customerPhone: user.phone || 'Not provided',
+                totalAmount: 900,
+                quantity: 1,
+                refillStatus: 'Pending'
+              });
+              await autoBooking.save();
+              console.log(`🔔 [AutoBooking] Created for ${user.email} at level ${gasLevel}%`);
+            } else {
+              console.log(`ℹ️ [AutoBooking] Pending booking already exists for ${user.email}`);
+            }
+          } catch (abErr) {
+            console.error('❌ Auto-booking on sensor update failed:', abErr);
+          }
+        }
         res.json({ success: true, message: "Data updated successfully", reading: updatedRecord });
         
       } catch (err) {

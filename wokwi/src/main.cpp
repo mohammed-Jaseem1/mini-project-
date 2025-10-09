@@ -20,7 +20,7 @@
 // --- USER CONFIGURATION ---
 // =================================================================
 // Target user for monitoring. Get this from your database or admin panel.
-String userId = "68deac8f17b9f4f894ce9d69";
+String userId = "68e7ce01f221d1ed04b9028e";
 
 // --- WiFi Configuration ---
 const char* ssid = "Wokwi-GUEST";

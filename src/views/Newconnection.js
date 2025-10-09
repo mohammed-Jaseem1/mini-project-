@@ -24,6 +24,7 @@ function KYCForm() {
     mobileNumber: '',
     email: '',
     connectionType: 'Residential',
+    distributorDistrict: '', // Add new field
   });
 
   const [success, setSuccess] = useState(false);
@@ -34,6 +35,24 @@ function KYCForm() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const salutations = ['Mr.', 'Mrs.'];
+  
+  // Add Kerala districts array
+  const keralaDistricts = [
+    'Thiruvananthapuram',
+    'Kollam',
+    'Pathanamthitta',
+    'Alappuzha',
+    'Kottayam',
+    'Idukki',
+    'Ernakulam',
+    'Thrissur',
+    'Palakkad',
+    'Malappuram',
+    'Kozhikode',
+    'Wayanad',
+    'Kannur',
+    'Kasaragod'
+  ];
 
   useEffect(() => {
     async function fetchUserDetails() {
@@ -93,6 +112,20 @@ function KYCForm() {
     checkKYCStatusAndAction();
   }, [navigate]);
 
+  // Add helper function to calculate max date (18 years ago)
+  const getMaxDateForAge18 = () => {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return maxDate.toISOString().split('T')[0];
+  };
+
+  // Add helper function to calculate min date (reasonable age limit, e.g., 100 years ago)
+  const getMinDateForAge100 = () => {
+    const today = new Date();
+    const minDate = new Date(today.getFullYear() - 100, today.getMonth(), today.getDate());
+    return minDate.toISOString().split('T')[0];
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (name === 'pinCode') {
@@ -108,6 +141,17 @@ function KYCForm() {
       setFormData((prev) => ({ ...prev, [name]: value.toLowerCase().trim() }));
     } else if (name === 'dob') {
       setDobError('');
+      // Validate the manually typed date
+      if (value) {
+        const selectedDate = new Date(value);
+        const today = new Date();
+        const maxAllowedDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+        
+        if (selectedDate > maxAllowedDate) {
+          setDobError('You must be at least 18 years old to apply.');
+          return; // Don't update the form data with invalid date
+        }
+      }
       setFormData((prev) => ({ ...prev, [name]: value }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -150,7 +194,7 @@ function KYCForm() {
     }
 
     // Required fields
-    const requiredFields = ['houseName', 'landmark', 'state', 'district', 'pinCode', 'mobileNumber', 'email'];
+    const requiredFields = ['houseName', 'landmark', 'state', 'district', 'pinCode', 'mobileNumber', 'email', 'distributorDistrict'];
     for (const field of requiredFields) {
       if (!formData[field]) {
         alert('Please fill all required fields.');
@@ -305,9 +349,11 @@ function KYCForm() {
               name="dob"
               value={formData.dob}
               onChange={handleChange}
-              max={new Date().toISOString().split('T')[0]}
+              min={getMinDateForAge100()} // Set min date to 100 years ago
+              max={getMaxDateForAge18()} // Set max date to 18 years ago
               required
               autoComplete="off"
+              title="You must be at least 18 years old to apply"
             />
           </label>
         </div>
@@ -437,6 +483,18 @@ function KYCForm() {
             <select name="connectionType" value={formData.connectionType} onChange={handleChange}>
               <option value="Residential">Residential</option>
               <option value="Commercial">Commercial</option>
+            </select>
+          </label>
+        </div>
+        
+        <div className="form-group">
+          <label>
+            Distributor (Kerala) <span style={{color:"red"}}>*</span>:
+            <select name="distributorDistrict" value={formData.distributorDistrict} onChange={handleChange} required>
+              <option value="">--Select District--</option>
+              {keralaDistricts.map((district) => (
+                <option key={district} value={district}>{district}</option>
+              ))}
             </select>
           </label>
         </div>
