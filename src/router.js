@@ -21,6 +21,7 @@ import AutoBooking from './views/AutoBooking'; // Import AutoBooking component
 import History from './views/History';
 import Booking from './views/Booking';
 import Reports from './views/Reports';  // Add this import at the top with other imports
+import MonthlyReport from './views/MonthlyReport'; // Add this import
 
 function App() {
   return (
@@ -51,6 +52,7 @@ function App() {
         <Route path="/history" element={<History />} />
         <Route path="/booking" element={<Booking />} />
         <Route path="/admin/reports" element={<Reports />} />  {/* Add Reports route */}
+        <Route path="/admin/monthly-report" element={<MonthlyReport />} /> {/* Add Monthly Report route */}
         
      
        

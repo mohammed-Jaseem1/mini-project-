@@ -82,6 +82,31 @@ app.post('/api/payment', async (req, res) => {
       return res.status(400).json({ message: 'Email and amount are required' });
     }
 
+    // ✅ Validate card expiry date
+    if (expiry && (paymentMethod === 'Credit Card' || paymentMethod === 'Debit Card')) {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1; // getMonth() returns 0-11, so add 1
+      
+      // Parse expiry date (expected format: MM/YY)
+      const expiryParts = expiry.split('/');
+      if (expiryParts.length === 2) {
+        const expiryMonth = parseInt(expiryParts[0], 10);
+        const expiryYear = parseInt('20' + expiryParts[1], 10); // Convert YY to 20YY
+        
+        // Check if card is expired
+        if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
+          return res.status(400).json({ 
+            message: 'Payment failed: Card has expired. Please use a valid card.' 
+          });
+        }
+      } else {
+        return res.status(400).json({ 
+          message: 'Invalid expiry date format. Please use MM/YY format.' 
+        });
+      }
+    }
+
     // Ensure we have a user and customerId for Payment model
     let userForPayment;
     if (customerId) {
@@ -476,6 +501,89 @@ app.get('/api/admin/reports', async (req, res) => {
   } catch (err) {
     console.error('Error fetching reports:', err);
     res.status(500).json({ error: 'Failed to fetch reports' });
+  }
+});
+
+// ✅ Admin: Monthly Report API
+app.get('/api/report/monthly-report', async (req, res) => {
+  try {
+    const { month, year } = req.query;
+    if (!month || !year) {
+      return res.status(400).json({ message: 'Month and year are required.' });
+    }
+    const monthInt = parseInt(month, 10);
+    const yearInt = parseInt(year, 10);
+
+    // Calculate start and end dates for the month
+    const startDate = new Date(yearInt, monthInt - 1, 1, 0, 0, 0);
+    const endDate = new Date(yearInt, monthInt, 1, 0, 0, 0);
+
+    // Fetch gas readings for the month
+    const readings = await GasMonitor.find({
+      createdAt: { $gte: startDate, $lt: endDate }
+    });
+
+    // Fetch payments for the month
+    const payments = await Payment.find({
+      date: { $gte: startDate, $lt: endDate }
+    });
+
+    // Calculations
+    const totalReadings = readings.length;
+    const avgGasLevel = totalReadings > 0 ? (readings.reduce((sum, r) => sum + (r.gasLevel || 0), 0) / totalReadings).toFixed(2) : 0;
+    const maxGasLevel = totalReadings > 0 ? Math.max(...readings.map(r => r.gasLevel || 0)) : 0;
+    const minGasLevel = totalReadings > 0 ? Math.min(...readings.map(r => r.gasLevel || 0)) : 0;
+    // Count alerts by gasLevel > 700 OR leakageDetected === true
+    const alertCount = readings.filter(r => (r.gasLevel > 700) || r.leakageDetected === true).length;
+    const totalIncome = payments.reduce((sum, p) => sum + (p.amountPaid || 0), 0);
+
+    res.json({
+      month: monthInt,
+      year: yearInt,
+      totalReadings,
+      avgGasLevel: Number(avgGasLevel),
+      maxGasLevel,
+      minGasLevel,
+      alertCount,
+      totalIncome
+    });
+  } catch (err) {
+    console.error('Monthly report error:', err);
+    res.status(500).json({ message: 'Server error generating monthly report.' });
+  }
+});
+
+// ✅ GET: Feedback List (with optional status filter)
+app.get('/api/feedback', async (req, res) => {
+  try {
+    const { status } = req.query;
+    let query = {};
+    if (status) {
+      query.status = status;
+    }
+    const feedbacks = await Feedback.find(query).sort({ createdAt: -1 });
+    res.json(feedbacks);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error while fetching feedback' });
+  }
+});
+
+// ✅ PUT: Update Feedback Status
+app.put('/api/feedback/:id/status', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const { id } = req.params;
+    if (!status) return res.status(400).json({ message: 'Status is required.' });
+    // Update both status and reviewStatus for consistency
+    const updated = await Feedback.findByIdAndUpdate(
+      id,
+      { $set: { status, reviewStatus: status, reviewedAt: new Date() } },
+      { new: true }
+    );
+    if (!updated) return res.status(404).json({ message: 'Feedback not found.' });
+    res.json(updated);
+  } catch (err) {
+    res.status(500).json({ message: 'Server error updating feedback status.' });
   }
 });
 

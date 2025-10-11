@@ -121,8 +121,8 @@ function FeedbackForm() {
               }}
             >
               <MenuItem value="feedback">Feedback</MenuItem>
-              <MenuItem value="bug">complaint</MenuItem>
-              <MenuItem value="feature">Request</MenuItem>
+              <MenuItem value="complaint">Complaint</MenuItem>
+              <MenuItem value="suggestion">Suggestion</MenuItem>
             </Select>
           </FormControl>
 

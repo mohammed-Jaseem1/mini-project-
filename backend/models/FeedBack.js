@@ -20,6 +20,11 @@ const feedbackSchema = new mongoose.Schema({
     enum: ['low', 'medium', 'high'],
     default: 'medium'
   },
+  status: {
+    type: String,
+    enum: ['pending', 'reviewed'],
+    default: 'pending'
+  },
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

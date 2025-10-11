@@ -1,113 +1,213 @@
-/* Styling for the Edit Profile container */
-.edit-profile-container {
+.edit-profile {
   max-width: 800px;
   margin: 2rem auto;
-  padding: 2.5rem;
-  background-color: #ffffff;
+  padding: 2rem;
+  background: white;
   border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-  font-family: 'Arial', sans-serif;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-.edit-profile-container h2 {
+.profile-header {
   text-align: center;
+  margin-bottom: 2rem;
+  position: relative;
+}
+
+.back-btn {
+  position: absolute;
+  left: 0;
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background: #5a6268;
+  transform: translateX(-2px);
+}
+
+.profile-header h2 {
   color: #2c3e50;
-  margin-bottom: 2rem;
+  margin: 0;
   font-size: 2rem;
-  border-bottom: 2px solid #3498db;
-  padding-bottom: 0.5rem;
-}
-
-/* Styling for each section (fieldset) */
-.edit-profile-section {
-  border: 1px solid #bdc3c7;
-  padding: 1.5rem 2rem;
-  margin-bottom: 2rem;
-  border-radius: 8px;
-}
-
-.edit-profile-section legend {
   font-weight: 600;
-  color: #34495e;
-  padding: 0 0.8rem;
+}
+
+.form-section {
+  border: 2px solid #e9ecef;
+  border-radius: 10px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  background: #f8f9fa;
+}
+
+.form-section legend {
+  font-weight: 600;
+  color: #495057;
+  padding: 0 15px;
   font-size: 1.2rem;
 }
 
-/* General label and input styling */
-.edit-profile-container label {
-  display: block;
-  margin-bottom: 1.2rem;
-  color: #555;
-  font-weight: 500;
+.form-group {
+  margin-bottom: 1.5rem;
 }
 
-.edit-profile-container input[type="text"],
-.edit-profile-container input[type="email"],
-.edit-profile-container input[type="tel"],
-.edit-profile-container input[type="date"],
-.edit-profile-container select {
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 500;
+  color: #495057;
+  font-size: 0.95rem;
+}
+
+.form-group input,
+.form-group select {
   width: 100%;
   padding: 12px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  box-sizing: border-box;
-  margin-top: 6px;
+  border: 2px solid #e9ecef;
+  border-radius: 8px;
   font-size: 1rem;
-  transition: border-color 0.3s;
+  transition: all 0.3s ease;
+  background: white;
 }
 
-.edit-profile-container input:focus,
-.edit-profile-container select:focus {
-  border-color: #3498db;
+.form-group input:focus,
+.form-group select:focus {
   outline: none;
+  border-color: #3498db;
+  box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
 }
 
-/* Row styling for side-by-side inputs */
-.edit-profile-row {
-  display: flex;
+.form-group input.error {
+  border-color: #e74c3c;
+}
+
+.error-message {
+  color: #e74c3c;
+  font-size: 0.875rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 1.5rem;
 }
 
-.edit-profile-row > label {
-  flex: 1;
+.nested-section {
+  border: 1px solid #dee2e6;
+  border-radius: 8px;
+  padding: 1.5rem;
+  margin-top: 1rem;
+  background: white;
 }
 
-/* Styling for error messages */
-.edit-profile-container span[style*="color: red"] {
-  font-size: 0.85rem;
-  margin-top: 5px;
-  display: block;
+.nested-section legend {
+  font-size: 1rem;
+  color: #6c757d;
+  font-weight: 500;
 }
 
-/* Submit button styling */
-.edit-profile-submit {
+.read-only {
+  background-color: #f8f9fa !important;
+  color: #6c757d;
+  cursor: not-allowed;
+}
+
+.form-actions {
   text-align: center;
   margin-top: 2rem;
 }
 
-.edit-profile-submit button {
-  background-color: #3498db;
+.submit-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 14px 28px;
   border: none;
+  padding: 15px 40px;
   border-radius: 8px;
-  cursor: pointer;
   font-size: 1.1rem;
   font-weight: 600;
-  transition: background-color 0.3s, transform 0.2s;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
 }
 
-.edit-profile-submit button:hover {
-  background-color: #2980b9;
+.submit-btn:hover {
   transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.25);
 }
 
-/* Success message styling */
-.edit-profile-container div[style*="color: #388e3c"] {
+.submit-btn:active {
+  transform: translateY(0);
+}
+
+.success-message {
   text-align: center;
-  font-size: 1.1rem;
+  margin-top: 1.5rem;
   padding: 1rem;
-  background-color: #e8f5e9;
+  background: #d4edda;
+  color: #155724;
+  border: 1px solid #c3e6cb;
   border-radius: 8px;
-  border-left: 5px solid #4caf50;
+  font-weight: 600;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .edit-profile {
+    margin: 1rem;
+    padding: 1rem;
+  }
+  
+  .form-row {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .back-btn {
+    position: relative;
+    margin-bottom: 1rem;
+  }
+  
+  .form-section {
+    padding: 1.5rem;
+  }
+  
+  .profile-header h2 {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .edit-profile {
+    margin: 0.5rem;
+    padding: 1rem;
+  }
+  
+  .form-section {
+    padding: 1rem;
+  }
+  
+  .submit-btn {
+    width: 100%;
+    padding: 12px;
+  }
 }

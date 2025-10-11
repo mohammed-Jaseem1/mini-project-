@@ -1,0 +1,79 @@
+.feedback-form-page {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
+  padding: 20px 0;
+}
+
+.form-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+}
+
+.form-paper {
+  background: white !important;
+  border-radius: 16px !important;
+  padding: 40px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1) !important;
+  width: 100%;
+}
+
+.form-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.back-button {
+  background: #f8fafc !important;
+  color: #64748b !important;
+}
+
+.form-title {
+  color: #1e293b !important;
+  font-weight: 700 !important;
+  margin: 0 !important;
+}
+
+.feedback-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-field .MuiOutlinedInput-root {
+  border-radius: 8px;
+}
+
+.form-field .MuiInputLabel-root {
+  color: #64748b;
+}
+
+.submit-button {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+  color: white !important;
+  border-radius: 8px !important;
+  padding: 12px 24px !important;
+  font-weight: 600 !important;
+  text-transform: none !important;
+  margin-top: 16px !important;
+  box-shadow: none !important;
+}
+
+.submit-button:hover {
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .form-paper {
+    padding: 24px !important;
+    margin: 16px !important;
+  }
+  
+  .form-title {
+    font-size: 1.75rem !important;
+  }
+}

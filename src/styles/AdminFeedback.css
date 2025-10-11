@@ -1,0 +1,46 @@
+.feedback-page { background: #f8fafc; min-height: 100vh; padding: 20px; }
+.page-container { max-width: 1400px; margin: 0 auto; }
+
+.page-header { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+.header-main { display: flex; align-items: center; gap: 12px; }
+.back-button { background: #f1f5f9; padding: 8px; border-radius: 8px; color: #475569; }
+.title-section { display: flex; align-items: center; gap: 12px; }
+.page-title { color: #1e293b; font-weight: 700; margin: 0; }
+
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 20px; }
+.stat-card { background: white; padding: 20px; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.stat-number { font-size: 2rem; font-weight: 800; margin: 8px 0; }
+.total-card .stat-number { color: #667eea; }
+.pending-card .stat-number { color: #f59e0b; }
+.reviewed-card .stat-number { color: #10b981; }
+.complaints-card .stat-number { color: #ef4444; }
+
+.feedback-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 16px; }
+.feedback-card { background: white; padding: 16px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); border-left: 4px solid #f59e0b; }
+.feedback-card.reviewed { border-left-color: #10b981; }
+.feedback-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.type-badge, .status-badge { padding: 4px 8px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; }
+.type-badge.complaint { background: #fef2f2; color: #dc2626; }
+.type-badge.feedback { background: #eff6ff; color: #2563eb; }
+.status-badge.pending { background: #fffbeb; color: #d97706; }
+.status-badge.reviewed { background: #f0fdf4; color: #059669; }
+
+.feedback-subject { font-weight: 600; color: #1e293b; margin-bottom: 8px; }
+.feedback-message { color: #64748b; font-size: 0.9rem; line-height: 1.4; }
+.view-full-button { color: #667eea; background: none; border: none; font-size: 0.8rem; margin-top: 8px; cursor: pointer; }
+
+.feedback-footer { display: flex; justify-content: space-between; margin-top: 12px; padding-top: 12px; border-top: 1px solid #f1f5f9; }
+.user-email { color: #64748b; font-size: 0.8rem; }
+.priority { padding: 2px 6px; border-radius: 4px; font-size: 0.7rem; font-weight: 600; }
+.priority.high { background: #fef2f2; color: #dc2626; }
+.priority.medium { background: #fffbeb; color: #d97706; }
+.priority.low { background: #f0fdf4; color: #059669; }
+
+.review-button { background: #10b981; color: white; border: none; padding: 8px 16px; border-radius: 6px; width: 100%; margin-top: 12px; font-weight: 600; cursor: pointer; }
+.review-button:hover { background: #059669; }
+
+.empty-card { background: white; padding: 40px; text-align: center; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+.retry-button { background: #667eea; color: white; border: none; padding: 8px 16px; border-radius: 6px; margin-top: 12px; cursor: pointer; }
+
+.error-alert { background: #fef2f2; color: #dc2626; padding: 12px; border-radius: 6px; margin-bottom: 16px; }
+.loading-container { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px; }

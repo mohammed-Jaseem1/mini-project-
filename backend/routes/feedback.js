@@ -47,7 +47,9 @@ router.post("/", async (req, res) => {
 // Get all feedbacks (admin only)
 router.get("/all", async (req, res) => {
   try {
+    // Include description and all relevant fields in the response
     const feedbacks = await Feedback.find().sort({ createdAt: -1 });
+    // No change needed here if you use feedback.description in frontend
     res.json(feedbacks);
   } catch (err) {
     console.error("Error fetching feedbacks:", err);
@@ -59,11 +61,13 @@ router.get("/all", async (req, res) => {
 router.put("/:id/review", async (req, res) => {
   try {
     const { adminResponse, reviewStatus } = req.body;
+    // Update both status and reviewStatus for consistency
     const feedback = await Feedback.findByIdAndUpdate(
       req.params.id,
       {
         adminResponse,
         reviewStatus,
+        status: reviewStatus, // <-- update status field too
         reviewedAt: new Date(),
       },
       { new: true }

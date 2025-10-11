@@ -83,6 +83,27 @@ export default function GasPayment() {
     setError("");
     setSuccess(false);
 
+    // ✅ Client-side validation for card expiry
+    if (expiry && (paymentMethod === 'Credit Card' || paymentMethod === 'Debit Card')) {
+      const currentDate = new Date();
+      const currentYear = currentDate.getFullYear();
+      const currentMonth = currentDate.getMonth() + 1;
+      
+      const expiryParts = expiry.split('/');
+      if (expiryParts.length === 2) {
+        const expiryMonth = parseInt(expiryParts[0], 10);
+        const expiryYear = parseInt('20' + expiryParts[1], 10);
+        
+        if (expiryYear < currentYear || (expiryYear === currentYear && expiryMonth < currentMonth)) {
+          setError('Card has expired. Please use a valid card.');
+          return;
+        }
+      } else {
+        setError('Invalid expiry date format. Please use MM/YY format.');
+        return;
+      }
+    }
+
     try {
       const res = await fetch("http://localhost:5000/api/payment", {
         method: "POST",
@@ -109,6 +130,17 @@ export default function GasPayment() {
     } catch (err) {
       setError("Server error. Please try later.");
     }
+  };
+
+  // ✅ Format expiry date input
+  const handleExpiryChange = (e) => {
+    let value = e.target.value.replace(/\D/g, ''); // Remove non-digits
+    
+    if (value.length >= 2) {
+      value = value.substring(0, 2) + '/' + value.substring(2, 4);
+    }
+    
+    setExpiry(value);
   };
 
   const handleBack = () => {
@@ -181,7 +213,8 @@ export default function GasPayment() {
                     type="text"
                     placeholder="MM/YY"
                     value={expiry}
-                    onChange={(e) => setExpiry(e.target.value)}
+                    onChange={handleExpiryChange}
+                    maxLength={5}
                     required
                   />
                 </div>

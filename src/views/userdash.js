@@ -439,7 +439,7 @@ const GasMonitorDashboard = () => {
           </Box>
         ) : (
           <>
-            {gasData.alertMessage && (
+            {gasData.alertMessage && !localStorage.getItem('refillMessageDismissed') && (
               <Alert 
                 severity={gasData.leakageDetected ? "error" : "warning"}
                 action={
@@ -448,7 +448,10 @@ const GasMonitorDashboard = () => {
                       <Button color="inherit" size="small" onClick={() => navigate('/payment')}>
                         Payment
                       </Button>
-                      <Button color="inherit" size="small" onClick={() => setGasData({ ...gasData, alertMessage: '' })}>
+                      <Button color="inherit" size="small" onClick={() => {
+                        setGasData({ ...gasData, alertMessage: '' });
+                        localStorage.setItem('refillMessageDismissed', 'true');
+                      }}>
                         Cancel
                       </Button>
                     </Box>
