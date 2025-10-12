@@ -65,9 +65,16 @@ function KYCForm() {
         });
         if (res.ok) {
           const data = await res.json();
+          // Remove +91 or any country code, keep only last 10 digits
+          const cleanMobile = (num) => {
+            if (!num) return '';
+            let n = num.toString().replace(/\D/g, '');
+            if (n.length > 10) n = n.slice(-10);
+            return n;
+          };
           setFormData((prev) => ({
             ...prev,
-            mobileNumber: (data?.phone || data?.mobileNumber || '').toString(),
+            mobileNumber: cleanMobile(data?.phone || data?.mobileNumber || ''),
             email: (data?.email || '').toLowerCase(),
           }));
         }
@@ -262,8 +269,15 @@ function KYCForm() {
 
     const enteredEmail = formData.email.trim().toLowerCase();
     const backendEmail = (backendUser.email || '').trim().toLowerCase();
-    const enteredMobile = formData.mobileNumber.replace(/\D/g, '').slice(-10);
-    const backendMobile = (backendUser.phone || backendUser.mobileNumber || '').replace(/\D/g, '').slice(-10);
+    // Remove +91 if present and get last 10 digits for both entered and backend mobile numbers
+    const cleanMobile = (num) => {
+      if (!num) return '';
+      let n = num.toString().replace(/\D/g, '');
+      if (n.length > 10) n = n.slice(-10);
+      return n;
+    };
+    const enteredMobile = cleanMobile(formData.mobileNumber);
+    const backendMobile = cleanMobile(backendUser.phone || backendUser.mobileNumber || '');
 
     if (enteredEmail !== backendEmail) {
       setEmailError('The email must match your registered/login email.');

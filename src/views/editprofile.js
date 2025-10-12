@@ -104,11 +104,28 @@ function EditProfile() {
     }
 
     setFormData(prev => ({ ...prev, [name]: processedValue }));
-    
-    // Clear error when user starts typing
+
+    // Show age validation message immediately when typing DOB
+    if (name === 'dob') {
+      const maxDate = getMaxDateForAge18();
+      if (processedValue && processedValue > maxDate) {
+        setErrors(prev => ({ ...prev, dob: 'You must be at least 18 years old to take the connection.' }));
+      } else {
+        setErrors(prev => ({ ...prev, dob: '' }));
+      }
+      return;
+    }
+
+    // Clear error when user starts typing other fields
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
+  };
+
+  const getMaxDateForAge18 = () => {
+    const today = new Date();
+    const maxDate = new Date(today.getFullYear() - 18, today.getMonth(), today.getDate());
+    return maxDate.toISOString().split('T')[0];
   };
 
   const validateForm = () => {
@@ -117,12 +134,11 @@ function EditProfile() {
     if (!formData.dob) {
       newErrors.dob = 'Date of Birth is required.';
     } else {
-      const today = new Date();
-      const birthDate = new Date(formData.dob);
-      let age = today.getFullYear() - birthDate.getFullYear();
-      const monthDiff = today.getMonth() - birthDate.getMonth();
-      if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) age--;
-      if (age < 18) newErrors.dob = 'You must be at least 18 years old.';
+      // Only allow DOB for users who are at least 18 years old as of today
+      const maxDate = getMaxDateForAge18();
+      if (formData.dob > maxDate) {
+        newErrors.dob = 'You must be at least 18 years old to take the connection.';
+      }
     }
 
     if (!formData.mobileNumber || !/^[987]\d{9}$/.test(formData.mobileNumber)) {
@@ -255,7 +271,7 @@ function EditProfile() {
                     value={formData.dob}
                     onChange={handleChange}
                     InputLabelProps={{ shrink: true }}
-                    inputProps={{ max: new Date().toISOString().split('T')[0] }}
+                    inputProps={{ max: getMaxDateForAge18() }}
                     error={!!errors.dob}
                     helperText={errors.dob}
                   />

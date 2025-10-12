@@ -247,6 +247,29 @@ function AdminFeedback() {
                       {feedback.subject || 'No subject'}
                     </Typography>
 
+                    {/* Description Preview */}
+                    {feedback.description && (
+                      <Box className="description-preview-section">
+                        <Typography variant="subtitle2" className="description-label">
+                          Description:
+                        </Typography>
+                        <Typography variant="body2" className="feedback-description">
+                          {feedback.description.length > 100
+                            ? `${feedback.description.substring(0, 100)}...`
+                            : feedback.description}
+                        </Typography>
+                        {feedback.description.length > 100 && (
+                          <Button
+                            size="small"
+                            startIcon={<Visibility />}
+                            onClick={() => handleViewFullMessage(feedback)}
+                            className="view-full-button"
+                          >
+                            View Full
+                          </Button>
+                        )}
+                      </Box>
+                    )}
                     {/* Message Preview with View Button */}
                     <Box className="message-preview-section">
                       <Typography variant="body2" className="feedback-message">
@@ -387,6 +410,19 @@ function AdminFeedback() {
                   </Grid>
                 </Grid>
 
+                {/* Description (if present) */}
+                {selectedFeedback.description && (
+                  <Box className="full-description-section">
+                    <Typography variant="subtitle2" className="description-label">
+                      Description:
+                    </Typography>
+                    <Box className="description-content">
+                      <Typography variant="body1" className="full-description">
+                        {selectedFeedback.description}
+                      </Typography>
+                    </Box>
+                  </Box>
+                )}
                 {/* Full Message */}
                 <Box className="full-message-section">
                   <Typography variant="subtitle2" className="message-label">
