@@ -138,11 +138,11 @@ router.post("/autobookings/payment-complete", async (req, res) => {
   }
 });
 
-// Add cancel booking route
+// Cancel booking
 router.put("/bookings/cancel/:id", async (req, res) => {
   try {
     const booking = await AutoBook1.findById(req.params.id);
-    
+
     if (!booking) {
       return res.status(404).json({ error: "Booking not found" });
     }
@@ -161,40 +161,3 @@ router.put("/bookings/cancel/:id", async (req, res) => {
 });
 
 module.exports = router;
-router.post("/autobook", async (req, res) => {
-  try {
-    const { userId, gasLevel, quantity } = req.body;
-
-    if (!userId || gasLevel === undefined)
-      return res.status(400).json({ message: "Missing userId or gasLevel" });
-
-    if (gasLevel > 20) {
-      return res.status(400).json({ message: "Gas level sufficient, auto-booking not needed." });
-    }
-
-    const existingBooking = await AutoBooking.findOne({
-      userId,
-      refillStatus: "Pending"
-    });
-
-    if (existingBooking) {
-      return res.status(400).json({ message: "There is already a pending booking for this user" });
-    }
-
-    const booking = new AutoBooking({
-      userId,
-      gasLevel,
-      quantity: quantity || 1,
-      totalAmount: 900 // default
-    });
-
-    await booking.save();
-
-    const populatedBooking = await AutoBooking.findById(booking._id).populate("userId", "name email phone");
-    res.status(201).json({ message: "Auto booking created", booking: populatedBooking });
-
-  } catch (error) {
-    console.error("Auto-booking error:", error);
-    res.status(500).json({ error: error.message });
-  }
-});

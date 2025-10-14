@@ -57,9 +57,9 @@ app.use('/api/register', registerRoute);
 app.use('/api/kyc', kycRoute);
 app.use('/api/payments', paymentRoute);
 app.use('/api/feedback', feedbackRoute);
-app.use('/api', autoBookingRoutes);
 app.use("/api/sensor", sensorRoutes);
 app.use('/api/gas', gasRoutes);
+app.use('/api', autoBookingRoutes); // Add this line to register autoBookingRoutes
 
 // ✅ POST: Save Payment
 app.post('/api/payment', async (req, res) => {

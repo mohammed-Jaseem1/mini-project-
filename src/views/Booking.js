@@ -147,11 +147,20 @@ const AutoBooking = () => {
                         sx={{
                           borderRadius: '4px',
                           padding: '4px 8px',
-                          backgroundColor: booking.refillStatus === 'Completed' ? '#27a644' : '#ed6c02',
+                          backgroundColor:
+                            booking.refillStatus === 'Completed'
+                              ? '#27a644'
+                              : booking.refillStatus === 'Cancelled'
+                              ? '#d32f2f'
+                              : '#ed6c02',
                           color: '#ffffff',
                         }}
                       >
-                        {booking.refillStatus}
+                        {booking.refillStatus === 'Cancelled'
+                          ? 'Cancelled'
+                          : booking.refillStatus === 'Completed'
+                          ? 'Completed'
+                          : 'Pending'}
                       </Typography>
                     </StyledTableCell>
                   </TableRow>
@@ -166,5 +175,4 @@ const AutoBooking = () => {
 };
 
 export default AutoBooking;
-                   
-                   
+

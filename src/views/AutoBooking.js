@@ -133,7 +133,13 @@ const AutoBooking = () => {
                       {booking.userId?.username || booking.userId?.name || booking.userId?.email || booking.email || "Unknown User"}
                     </Typography>
                     <Chip
-                      label={booking.refillStatus}
+                      label={
+                        booking.refillStatus === 'Cancelled'
+                          ? 'Cancelled'
+                          : booking.refillStatus === 'Completed'
+                          ? 'Completed'
+                          : booking.refillStatus
+                      }
                       color={getStatusColor(booking.refillStatus)}
                       size="small"
                       className="status-chip"

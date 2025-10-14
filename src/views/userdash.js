@@ -203,7 +203,7 @@ const GasMonitorDashboard = () => {
           setGasData(data);
           // Check gas level and set auto-booking message
           if (data.gasLevel <= 20) {
-            setAutoBookingMessage('LPG cylinder has been automatically booked due to low gas level.');
+            setAutoBookingMessage('LPG cylinder has been automatically booked due to low gas level. Please proceed with the online payment to refill the cylinder.');
           } else {
             setAutoBookingMessage('');
           }
@@ -439,11 +439,12 @@ const GasMonitorDashboard = () => {
           </Box>
         ) : (
           <>
-            {gasData.alertMessage && !localStorage.getItem('refillMessageDismissed') && (
+            {gasData.alertMessage && (
               <Alert 
                 severity={gasData.leakageDetected ? "error" : "warning"}
                 action={
-                  gasData.gasLevel <= 20 && (
+                  gasData.gasLevel <= 20 &&
+                  gasData.alertMessage !== "CRITICAL: Gas Leak Detected AND Low Tank!" && (
                     <Box>
                       <Button color="inherit" size="small" onClick={() => navigate('/payment')}>
                         Payment
@@ -476,6 +477,42 @@ const GasMonitorDashboard = () => {
                     color: '#ffffff'
                   }
                 }}
+                action={
+                  <Box>
+                    <Button color="inherit" size="small" onClick={() => navigate('/payment')}>
+                      Payment
+                    </Button>
+                    <Button
+                      color="inherit"
+                      size="small"
+                      onClick={async () => {
+                        try {
+                          // Find the pending booking for this user
+                          const userRes = await fetch("http://localhost:5000/api/user/me", {
+                            credentials: "include"
+                          });
+                          const userData = await userRes.json();
+                          const bookingsRes = await fetch(`http://localhost:5000/api/gas/auto-bookings/${userData.email}`, {
+                            credentials: "include"
+                          });
+                          const bookings = await bookingsRes.json();
+                          const pendingBooking = bookings.find(b => b.refillStatus === "Pending");
+                          if (pendingBooking) {
+                            await fetch(`http://localhost:5000/api/bookings/cancel/${pendingBooking._id}`, {
+                              method: "PUT",
+                              credentials: "include"
+                            });
+                          }
+                        } catch (err) {
+                          // Optionally show error
+                        }
+                        setAutoBookingMessage('');
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </Box>
+                }
               >
                 {autoBookingMessage}
               </Alert>
