@@ -18,15 +18,27 @@ router.post("/autobook", async (req, res) => {
     }
 
     // Check for existing pending booking
-    const existingBooking = await AutoBook1.findOne({
-      userId,
-      refillStatus: "Pending"
-    });
 
-    if (existingBooking) {
-      return res.status(400).json({
-        message: "There is already a pending booking for this user"
-      });
+    // Find the most recent booking for this user (ensure ObjectId type)
+    const mongoose = require('mongoose');
+    const userObjectId = mongoose.Types.ObjectId.isValid(userId) ? mongoose.Types.ObjectId(userId) : userId;
+    const lastBooking = await AutoBook1.findOne({ userId: userObjectId })
+      .sort({ bookingDate: -1 });
+    console.log(`[AutoBooking] UserId: ${userObjectId}, Last Booking:`, lastBooking ? lastBooking.refillStatus : 'None');
+
+    if (lastBooking) {
+      if (lastBooking.refillStatus === "Pending") {
+        console.log(`[AutoBooking] Blocked: Pending booking exists for user ${userObjectId}`);
+        return res.status(400).json({
+          message: "There is already a pending booking for this user"
+        });
+      }
+      if (lastBooking.refillStatus === "Cancelled") {
+        console.log(`[AutoBooking] Blocked: Last booking was cancelled for user ${userObjectId}`);
+        return res.status(400).json({
+          message: "Previous booking was cancelled. Please contact support or book manually."
+        });
+      }
     }
 
     const booking = new AutoBook1({

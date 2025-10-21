@@ -317,7 +317,24 @@ app.get('/api/gas/status', async (req, res) => {
     // ✅ Check if auto-booking is needed when gas is low
     if (lastEntry.gasLevel <= 20) {
       try {
-        // Remove the check for existingBooking if you want to always create a booking
+        // Find the most recent booking for this user
+        const lastBooking = await AutoBook1.findOne({ userId: user._id }).sort({ bookingDate: -1 });
+        console.log(`[AutoBooking] /api/gas/status UserId: ${user._id}, Last Booking:`, lastBooking ? lastBooking.refillStatus : 'None');
+
+        if (lastBooking) {
+          if (lastBooking.refillStatus === "Pending") {
+            console.log(`[AutoBooking] Blocked: Pending booking exists for user ${user._id}`);
+            // Do not create another booking
+            return res.json(lastEntry);
+          }
+          if (lastBooking.refillStatus === "Cancelled") {
+            console.log(`[AutoBooking] Blocked: Last booking was cancelled for user ${user._id}`);
+            // Do not create another booking
+            return res.json(lastEntry);
+          }
+        }
+
+        // No pending/cancelled booking, create auto-booking
         const autoBooking = new AutoBook1({
           userId: user._id,
           gmail: user.email,

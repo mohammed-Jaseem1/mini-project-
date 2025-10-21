@@ -93,7 +93,17 @@ function AdminDashboard() {
         });
         const report = res.data;
         setMonthlyRevenue(report.totalIncome || 0);
-        setRecentAlerts(report.alertCount || 0);
+
+        // Use alert count from monthly report
+        let alertCount = 0;
+        if (typeof report.alertCount === "number") {
+          alertCount = report.alertCount;
+        } else if (Array.isArray(report.alerts)) {
+          alertCount = report.alerts.length;
+        } else if (typeof report.recentAlerts === "number") {
+          alertCount = report.recentAlerts;
+        }
+        setRecentAlerts(alertCount);
       } catch (err) {
         setMonthlyRevenue(0);
         setRecentAlerts(0);

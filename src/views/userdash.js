@@ -91,6 +91,7 @@ const GasMonitorDashboard = () => {
   const [error, setError] = useState("");
   const [approved, setApproved] = useState(null);
   const [autoBookingMessage, setAutoBookingMessage] = useState('');
+  const [autoBookingDismissed, setAutoBookingDismissed] = useState(false);
   const [connectionDetails, setConnectionDetails] = useState({
     date: null,
     type: 'Domestic',
@@ -201,11 +202,19 @@ const GasMonitorDashboard = () => {
         if (res.ok) {
           const data = await res.json();
           setGasData(data);
-          // Check gas level and set auto-booking message
-          if (data.gasLevel <= 20 && !localStorage.getItem('autoBookingMessageDismissed')) {
+          // Check last booking status before showing auto-booking message
+          const userRes = await fetch("http://localhost:5000/api/user/me", { credentials: "include" });
+          const userData = await userRes.json();
+          const bookingsRes = await fetch(`http://localhost:5000/api/autobookings/${userData._id}`, { credentials: "include" });
+          const bookings = await bookingsRes.json();
+          const lastBooking = bookings && bookings.length > 0 ? bookings[0] : null;
+          const dismissed = localStorage.getItem('autoBookingDismissed') === 'true';
+          if (data.gasLevel <= 20 && !dismissed && (!lastBooking || lastBooking.refillStatus !== "Cancelled")) {
             setAutoBookingMessage('LPG cylinder has been automatically booked due to low gas level. Please proceed with the online payment to refill the cylinder.');
+            setAutoBookingDismissed(false);
           } else {
             setAutoBookingMessage('');
+            setAutoBookingDismissed(true);
           }
           setError("");
         } else {
@@ -259,6 +268,13 @@ const GasMonitorDashboard = () => {
     if (paymentDone) {
       setGasData(prev => prev ? { ...prev, gasLevel: 100, alertMessage: '' } : prev);
       localStorage.removeItem('gasRefilled');
+      localStorage.removeItem('autoBookingDismissed'); // Reset dismissal after refill
+      setAutoBookingDismissed(false);
+    }
+    // Reset dismissal if gas level is above 20 (user has refilled or gas is not low)
+    if (gasData && gasData.gasLevel > 20) {
+      localStorage.removeItem('autoBookingDismissed');
+      setAutoBookingDismissed(false);
     }
   }, [gasData]);
 
@@ -353,7 +369,7 @@ const GasMonitorDashboard = () => {
   }, []);
 
   // Add helper function for date calculations
-  const calculateNextTestDate = (connectionDate, years = 5) => {
+  const calculateNextTestDate = (connectionDate, years) => {
     if (!connectionDate) return 'Loading...';
     const nextTest = new Date(connectionDate);
     nextTest.setFullYear(nextTest.getFullYear() + years);
@@ -376,7 +392,7 @@ const GasMonitorDashboard = () => {
           {/* Desktop Navigation */}
           <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
             <Button color="inherit" onClick={() => navigate("/userdash")} sx={{ color: '#e0e0e0' }}>Dashboard</Button>
-            <Button color="inherit" onClick={() => navigate("/payment")} sx={{ color: '#e0e0e0' }}>Payment</Button>
+            <Button color="inherit" onClick={() => navigate("/payment")} sx={{ color: '#e0e0e0' }}>Manual-Booking</Button>
             <Button color="inherit" onClick={() => navigate("/feedback")} sx={{ color: '#e0e0e0' }}>Feedback</Button>
             <Button color="inherit" onClick={() => navigate("/history")} sx={{ color: '#e0e0e0' }}>History</Button>
           </Box>
@@ -444,7 +460,8 @@ const GasMonitorDashboard = () => {
                 severity={gasData.leakageDetected ? "error" : "warning"}
                 action={
                   gasData.gasLevel <= 20 &&
-                  gasData.alertMessage !== "CRITICAL: Gas Leak Detected AND Low Tank!" && (
+                  gasData.alertMessage !== "CRITICAL: Gas Leak Detected AND Low Tank!" &&
+                  gasData.alertMessage !== "WARNING: Low Gas Level! Please Refill Soon." && (
                     <Box>
                       <Button color="inherit" size="small" onClick={() => navigate('/payment')}>
                         Payment
@@ -466,7 +483,7 @@ const GasMonitorDashboard = () => {
               </Alert>
             )}
 
-            {autoBookingMessage && (
+            {autoBookingMessage && !autoBookingDismissed && (
               <Alert 
                 severity="info"
                 sx={{ 
@@ -507,7 +524,8 @@ const GasMonitorDashboard = () => {
                           // Optionally show error
                         }
                         setAutoBookingMessage('');
-                        localStorage.setItem('autoBookingMessageDismissed', 'true');
+                        setAutoBookingDismissed(true);
+                        localStorage.setItem('autoBookingDismissed', 'true');
                       }}
                     >
                       Cancel
