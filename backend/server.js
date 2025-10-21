@@ -317,32 +317,24 @@ app.get('/api/gas/status', async (req, res) => {
     // ✅ Check if auto-booking is needed when gas is low
     if (lastEntry.gasLevel <= 20) {
       try {
-        // Check if there's already a pending booking
-        const existingBooking = await AutoBook1.findOne({
+        // Remove the check for existingBooking if you want to always create a booking
+        const autoBooking = new AutoBook1({
           userId: user._id,
+          gmail: user.email,
+          gasLevel: lastEntry.gasLevel,
+          address: {
+            street: user.address || 'Not provided',
+            city: user.city || 'Not provided',
+            state: user.state || 'Not provided',
+            pincode: user.pincode || '000000'
+          },
+          customerPhone: user.phone || 'Not provided',
+          totalAmount: 900,
+          quantity: 1,
           refillStatus: "Pending"
         });
-
-        if (!existingBooking) {
-          // Create auto-booking
-          const autoBooking = new AutoBook1({
-            userId: user._id,
-            gmail: user.email,
-            gasLevel: lastEntry.gasLevel,
-            address: {
-              street: user.address || 'Not provided',
-              city: user.city || 'Not provided',
-              state: user.state || 'Not provided',
-              pincode: user.pincode || '000000'
-            },
-            customerPhone: user.phone || 'Not provided',
-            totalAmount: 900,
-            quantity: 1,
-            refillStatus: "Pending"
-          });
-          await autoBooking.save();
-          console.log(`🔔 Auto-booking created for ${user.email} at gas level ${lastEntry.gasLevel}%`);
-        }
+        await autoBooking.save();
+        console.log(`🔔 Auto-booking created for ${user.email} at gas level ${lastEntry.gasLevel}%`);
       } catch (bookingError) {
         console.error('❌ Auto-booking creation error:', bookingError);
         // Don't fail the entire request if auto-booking fails

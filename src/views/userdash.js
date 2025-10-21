@@ -202,7 +202,7 @@ const GasMonitorDashboard = () => {
           const data = await res.json();
           setGasData(data);
           // Check gas level and set auto-booking message
-          if (data.gasLevel <= 20) {
+          if (data.gasLevel <= 20 && !localStorage.getItem('autoBookingMessageDismissed')) {
             setAutoBookingMessage('LPG cylinder has been automatically booked due to low gas level. Please proceed with the online payment to refill the cylinder.');
           } else {
             setAutoBookingMessage('');
@@ -353,7 +353,7 @@ const GasMonitorDashboard = () => {
   }, []);
 
   // Add helper function for date calculations
-  const calculateNextTestDate = (connectionDate, years) => {
+  const calculateNextTestDate = (connectionDate, years = 5) => {
     if (!connectionDate) return 'Loading...';
     const nextTest = new Date(connectionDate);
     nextTest.setFullYear(nextTest.getFullYear() + years);
@@ -507,6 +507,7 @@ const GasMonitorDashboard = () => {
                           // Optionally show error
                         }
                         setAutoBookingMessage('');
+                        localStorage.setItem('autoBookingMessageDismissed', 'true');
                       }}
                     >
                       Cancel
@@ -568,37 +569,14 @@ const GasMonitorDashboard = () => {
                       Grey/Red • Household Use
                     </Typography>
                     <Typography variant="body2">
-                      Next Test: {calculateNextTestDate(connectionDetails.date, 15)}
+                      Next Test: {calculateNextTestDate(connectionDetails.date, 5)}
                     </Typography>
                     <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
                       Connection Date: {connectionDetails.date ? 
                         connectionDetails.date.toLocaleDateString() : 'Loading...'}
                     </Typography>
                     <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#ffd700' }}>
-                      Test Required Every 15 Years
-                    </Typography>
-                  </CardContent>
-                </TubeTypeCard>
-              </Grid>
-
-              <Grid item xs={12} md={6}>
-                <TubeTypeCard tubeType="Commercial" sx={{ minHeight: 150 }}>
-                  <CardContent sx={{ textAlign: 'center' }}>
-                    <Typography variant="subtitle1" color="inherit" gutterBottom>
-                      Commercial LPG Cylinder
-                    </Typography>
-                    <Typography variant="h5" sx={{ color: 'inherit', fontWeight: 'bold', mb: 1 }}>
-                      Blue • Restaurant Use
-                    </Typography>
-                    <Typography variant="body2">
-                      Next Test: {calculateNextTestDate(connectionDetails.date, 10)}
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: 'block', mt: 1 }}>
-                      Connection Date: {connectionDetails.date ? 
-                        connectionDetails.date.toLocaleDateString() : 'Loading...'}
-                    </Typography>
-                    <Typography variant="caption" sx={{ display: 'block', mt: 1, color: '#ffd700' }}>
-                      Test Required Every 10-15 Years
+                      Test Required Every 5 Years
                     </Typography>
                   </CardContent>
                 </TubeTypeCard>
