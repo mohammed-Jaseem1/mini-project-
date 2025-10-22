@@ -330,7 +330,11 @@ app.get('/api/gas/status', async (req, res) => {
           if (lastBooking.refillStatus === "Cancelled") {
             console.log(`[AutoBooking] Blocked: Last booking was cancelled for user ${user._id}`);
             // Do not create another booking
-            return res.json(lastEntry);
+            return res.json({
+              ...lastEntry._doc,
+              autoBookingBlocked: true,
+              message: "Previous booking was cancelled. Please contact support or book manually."
+            });
           }
         }
 

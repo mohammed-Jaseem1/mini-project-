@@ -98,25 +98,31 @@ const handleEsp32Update = async (req, res) => {
         // ✅ Trigger auto-booking when gas level is low (device-driven)
         if (gasLevel <= 20) {
           try {
-            const existingPending = await AutoBook1.findOne({
+            // Find the most recent booking for this user
+            const lastBooking = await AutoBook1.findOne({ userId: user._id }).sort({ bookingDate: -1 });
+            if (lastBooking) {
+              if (lastBooking.refillStatus === 'Pending') {
+                console.log(`ℹ️ [AutoBooking] Pending booking already exists for ${user.email}`);
+                // Do not create another booking
+                return;
+              }
+              if (lastBooking.refillStatus === 'Cancelled') {
+                console.log(`⛔ [AutoBooking] Last booking was cancelled for ${user.email}`);
+                // Do not create another booking
+                return;
+              }
+            }
+            // No pending/cancelled booking, create auto-booking
+            const autoBooking = new AutoBook1({
               userId: user._id,
+              gasLevel: gasLevel,
+              customerPhone: user.phone || 'Not provided',
+              totalAmount: 900,
+              quantity: 1,
               refillStatus: 'Pending'
             });
-
-            if (!existingPending) {
-              const autoBooking = new AutoBook1({
-                userId: user._id,
-                gasLevel: gasLevel,
-                customerPhone: user.phone || 'Not provided',
-                totalAmount: 900,
-                quantity: 1,
-                refillStatus: 'Pending'
-              });
-              await autoBooking.save();
-              console.log(`🔔 [AutoBooking] Created for ${user.email} at level ${gasLevel}%`);
-            } else {
-              console.log(`ℹ️ [AutoBooking] Pending booking already exists for ${user.email}`);
-            }
+            await autoBooking.save();
+            console.log(`🔔 [AutoBooking] Created for ${user.email} at level ${gasLevel}%`);
           } catch (abErr) {
             console.error('❌ Auto-booking on sensor update failed:', abErr);
           }

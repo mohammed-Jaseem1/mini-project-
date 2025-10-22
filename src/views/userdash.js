@@ -266,7 +266,7 @@ const GasMonitorDashboard = () => {
   useEffect(() => {
     const paymentDone = localStorage.getItem('gasRefilled');
     if (paymentDone) {
-      setGasData(prev => prev ? { ...prev, gasLevel: 100, alertMessage: '' } : prev);
+      setGasData(prev => prev ? { ...prev, gasLevel: 100, alertMessage: '✅ Gas tank filled successfully!' } : prev);
       localStorage.removeItem('gasRefilled');
       localStorage.removeItem('autoBookingDismissed'); // Reset dismissal after refill
       setAutoBookingDismissed(false);
