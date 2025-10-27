@@ -1,11 +1,14 @@
-// server.js
+// functions/index.js
 
-require('dotenv').config();
+// CHANGE 1: We must import the 'firebase-functions' library
+const functions = require("firebase-functions");
+
+// --- Your original imports (they stay the same) ---
 const express = require('express');
 const cors = require('cors');
 const mongoose = require('mongoose');
 
-// --- Route Imports ---
+// --- Your original route imports (they stay the same) ---
 const loginRoute = require('./routes/login');
 const registerRoute = require('./routes/register');
 const newconnectionRoute = require('./routes/newconnection');
@@ -17,13 +20,13 @@ const historyRoute = require('./routes/history');
 const myFeedbackRoutes = require('./routes/myfeedback');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
 
 // --- Middleware Setup ---
-app.use(cors());
+// CHANGE 2: Use cors with origin set to true for Firebase Functions
+app.use(cors({ origin: true }));
 app.use(express.json());
 
-// --- API Routes ---
+// --- Your original API Routes (they stay the same) ---
 app.use('/api/login', loginRoute);
 app.use('/api/register', registerRoute);
 app.use('/api/newconnection', newconnectionRoute);
@@ -34,14 +37,12 @@ app.use('/api/simulation', simulationRoute);
 app.use('/api/history', historyRoute);
 app.use('/api/myfeedback', myFeedbackRoutes);
 
-// --- Simple Health Check Route ---
+// --- Your original Health Check Route (it stays the same) ---
 app.get('/', (req, res) => res.send('API is running successfully!'));
 
-// --- Start HTTP server immediately (so clients can connect even if DB is down) ---
-app.listen(PORT, () => console.log(`🚀 🚀 🚀  Server is running on port ${PORT}`));
-
-// --- MongoDB Connection (non-fatal) ---
-const MONGO_URI = process.env.MONGO_URI || 'mongodb://127.0.0.1:27017/miniproject';
+// --- MongoDB Connection ---
+// CHANGE 3: We get the connection string from Firebase's environment config, NOT a .env file.
+const MONGO_URI = functions.config().mongodb.uri;
 
 mongoose.connect(MONGO_URI)
   .then(() => {
@@ -49,5 +50,13 @@ mongoose.connect(MONGO_URI)
   })
   .catch(err => {
     console.error('❌ ❌ ❌  MongoDB connection error:', err.message);
-    console.error('⚠️  Continuing to serve HTTP endpoints; DB-dependent routes may fail until MongoDB is available.');
   });
+
+
+// CHANGE 4: DELETE the app.listen() block. Firebase handles this automatically.
+// app.listen(PORT, () => console.log(`🚀 🚀 🚀  Server is running on port ${PORT}`));
+
+
+// CHANGE 5: EXPORT your Express app as a single Cloud Function called 'api'.
+// This is the most important change. It tells Firebase how to run your server code.
+exports.api = functions.https.onRequest(app);
